@@ -9,6 +9,7 @@ namespace Housing
 {
     public class HousingMain : PortletBase
     {
+        
         protected override PortletViewBase GetCurrentScreen()
         {
             PortletViewBase screen = null;
