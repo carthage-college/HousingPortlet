@@ -16,6 +16,8 @@ namespace Housing
     {
         OdbcConnectionClass3 odbcConn = new OdbcConnectionClass3("ERPDataConnection.config");
 
+        public override string ViewName { get { return "Housing Sign-up Application"; } }
+
         public string SpringSession { get { return "RC"; } }
         public string FallSession { get { return "RA"; } }
         public string CurrentYear { get { return new DateTime().Year.ToString(); } }
@@ -26,8 +28,35 @@ namespace Housing
         {
             if (this.IsFirstLoad)
             {
-                InitScreen();
+                InitScreenStatic();
             }
+        }
+
+        protected void InitScreenStatic()
+        {
+            this.ltlStudentName.Text = "Mike Kishline";
+            this.ltlRegisteredHousing.Text = "Denhart 120";
+
+            DateTime registeredDateTime = new DateTime();
+            this.ltlRegisteredDateTime.Text = String.Format("{0:hh:mm:ss tt on dddd MMMM d, yyyy}", registeredDateTime);
+            //this.bulletedRoommates - load roommate list
+
+            this.ltlGreekStatus.Text = "a member of [GreekOrgName]"; //"not a member of a residential fraternity or sorority"
+            this.ltlHold.Text = ""; //"not"
+            this.ltlHoldDetail.Visible = this.ltlHold.Text.Length == 0;
+            this.ltlRegistered.Text = ""; //"not"
+            this.panelRegisteredDetail.Visible = this.ltlRegistered.Text.Length == 0;
+            this.ltlRegisteredYear.Text = String.Format("{0} - {1}", CurrentYear, NextYear);
+            this.ltlGender.Text = "You are male"; //"female", "Our records don't indicate your gender"
+            this.ltlCareerCredits.Text = "120";
+            this.ltlCurrentHousing.Text = "Denhart 119";
+            this.panelCurrentHousing.Visible = this.ltlCurrentHousing.Text.Length > 0;
+            this.ltlNotResident.Visible = this.ltlCurrentHousing.Text.Length == 0;
+
+            bool isValidTime = true, mayRegister = true;
+            this.lnkAvailability.Visible = isValidTime && mayRegister;
+            this.ltlCannotRegister.Visible = isValidTime && !mayRegister;
+            this.ltlInvalidTime.Visible = !isValidTime;
         }
 
         protected void InitScreen()
@@ -105,6 +134,12 @@ namespace Housing
                     odbcConn.Close();
                 }
             }
+        }
+
+        protected void lnkAvailability_Click(object sender, EventArgs e)
+        {
+            //Click on the "availability" link takes the user to the building/room selection screen
+            this.ParentPortlet.NextScreen("AvailabilityBuilding");
         }
     }
 }

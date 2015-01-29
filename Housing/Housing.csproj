@@ -41,6 +41,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CUS.OdbcConnectionClass3">
+      <HintPath>..\..\..\..\..\..\bin\CUS.OdbcConnectionClass3.dll</HintPath>
+    </Reference>
     <Reference Include="Jenzabar.Common">
       <HintPath>..\..\..\..\..\..\bin\Jenzabar.Common.dll</HintPath>
     </Reference>
@@ -60,6 +63,27 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Accept_Room.ascx.cs">
+      <DependentUpon>Accept_Room.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Accept_Room.ascx.designer.cs">
+      <DependentUpon>Accept_Room.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="Availability_Building_View.ascx.cs">
+      <DependentUpon>Availability_Building_View.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Availability_Building_View.ascx.designer.cs">
+      <DependentUpon>Availability_Building_View.ascx</DependentUpon>
+    </Compile>
+    <Compile Include="Availability_Room_View.ascx.cs">
+      <DependentUpon>Availability_Room_View.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Availability_Room_View.ascx.designer.cs">
+      <DependentUpon>Availability_Room_View.ascx</DependentUpon>
+    </Compile>
     <Compile Include="Default_View.ascx.cs">
       <DependentUpon>Default_View.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -71,7 +95,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Accept_Room.ascx" />
+    <Content Include="Availability_Building_View.ascx" />
+    <Content Include="Availability_Room_View.ascx" />
     <Content Include="Default_View.ascx" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="web.config" />
+    <None Include="web.Debug.config">
+      <DependentUpon>web.config</DependentUpon>
+    </None>
+    <None Include="web.Release.config">
+      <DependentUpon>web.config</DependentUpon>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v12.0\WebApplications\Microsoft.WebApplication.targets" />
