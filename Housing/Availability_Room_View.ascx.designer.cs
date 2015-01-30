@@ -22,12 +22,21 @@ namespace Housing {
         protected global::Jenzabar.Common.Web.UI.Controls.ErrorDisplay errMsg;
         
         /// <summary>
-        /// tblRooms control.
+        /// lnkPickBuilding control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Table tblRooms;
+        protected global::System.Web.UI.WebControls.LinkButton lnkPickBuilding;
+        
+        /// <summary>
+        /// rptRoomList control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater rptRoomList;
     }
 }

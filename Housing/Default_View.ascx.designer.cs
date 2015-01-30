@@ -103,13 +103,13 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.Literal ltlHold;
         
         /// <summary>
-        /// ltlHoldDetail control.
+        /// contentHoldDetail control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltlHoldDetail;
+        protected global::Jenzabar.Common.Web.UI.Controls.ContentBox contentHoldDetail;
         
         /// <summary>
         /// ltlRegistered control.
@@ -121,13 +121,13 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.Literal ltlRegistered;
         
         /// <summary>
-        /// panelRegisteredDetail control.
+        /// contentRegisteredDetail control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Panel panelRegisteredDetail;
+        protected global::Jenzabar.Common.Web.UI.Controls.ContentBox contentRegisteredDetail;
         
         /// <summary>
         /// ltlRegisteredYear control.

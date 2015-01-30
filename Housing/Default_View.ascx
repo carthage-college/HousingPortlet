@@ -3,7 +3,7 @@
 <div class="pSection">
     <common:ErrorDisplay ID="errMsg" runat="server" />
 </div>
-<h3>Welcome, <asp:Literal ID="ltlStudentName" runat="server" Text="[FIX THIS]" /></h3>
+<h4>Welcome, <asp:Literal ID="ltlStudentName" runat="server" Text="[FIX THIS]" /></h4>
 <asp:Panel ID="panelRegistered" runat="server" CssClass="pSection">
     <p>You have registered for <asp:Literal ID="ltlRegisteredHousing" runat="server" Text="[FIX THIS]" />.</p>
     <p>Your registration was completed at <asp:Literal ID="ltlRegisteredDateTime" runat="server" Text="[FIX THIS]" />.</p>
@@ -20,15 +20,17 @@
     <ul>
         <li>You are <asp:Literal ID="ltlGreekStatus" runat="server" Text="[FIX THIS]" />.</li>
         <li>
-            Your account is <asp:Literal ID="ltlHold" runat="server" Text="[FIX THIS]" />.
-            <asp:Literal ID="ltlHoldDetail" runat="server" Mode="PassThrough" Text="<br /><strong>You will not be able to sign up for housing until your outstanding balances are paid. Please contact the Business Office at x6333 about this." />
+            Your account is <asp:Literal ID="ltlHold" runat="server" Text="[FIX THIS]" /> current.
+            <common:ContentBox ID="contentHoldDetail" runat="server">
+                <strong>You will not be able to sign up for housing until your outstanding balances are paid. Please contact the Business Office at x6333 about this.</strong>
+            </common:ContentBox>
         </li>
         <li>
             You have <asp:Literal ID="ltlRegistered" runat="server" Text="[FIX THIS]" /> registered for classes in the fall.
-            <asp:Panel ID="panelRegisteredDetail" runat="server">
-                <br /><strong>You are unable to sign up for housing because you are not registered as a ful-time student for the <asp:Literal ID="ltlRegisteredYear" runat="server" Text="[FIX THIS]" />
+            <common:ContentBox ID="contentRegisteredDetail" runat="server">
+                <strong>You are unable to sign up for housing because you are not registered as a full-time student for the <asp:Literal ID="ltlRegisteredYear" runat="server" Text="[FIX THIS]" />
                 academic year. Contact the Registrar's office at 262-551-6100 for additional information.</strong>
-            </asp:Panel>
+            </common:ContentBox>
         </li>
         <li><asp:Literal ID="ltlGender" runat="server" Text="[FIX THIS]" />.</li>
         <li>You have earned <asp:Literal ID="ltlCareerCredits" runat="server" Text="[FIX THIS]" /> credits.</li>

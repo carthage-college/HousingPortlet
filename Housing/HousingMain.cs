@@ -26,7 +26,7 @@ namespace Housing
                 //Start screen
                 case "Default":
                 default:
-                    screen = this.LoadPortletView("ICS/Portelt.Housing/Default_View.ascx");
+                    screen = this.LoadPortletView("ICS/Portlet.Housing/Default_View.ascx");
                     break;
             }
             return screen;
