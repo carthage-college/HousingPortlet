@@ -31,6 +31,15 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.LinkButton lnkPickBuilding;
         
         /// <summary>
+        /// ltlBuildingName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlBuildingName;
+        
+        /// <summary>
         /// rptRoomList control.
         /// </summary>
         /// <remarks>
@@ -38,5 +47,14 @@ namespace Housing {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater rptRoomList;
+        
+        /// <summary>
+        /// ltlRoomCount control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlRoomCount;
     }
 }
