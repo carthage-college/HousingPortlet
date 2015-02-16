@@ -188,10 +188,10 @@ namespace Housing
                 //this.ltlCannotRegister.Visible = isValidTime && !mayRegister;
                 //this.ltlInvalidTime.Visible = !isValidTime;
 
-                foreach(DataColumn dc in dt.Columns)
-                {
-                    this.ltlNotResident.Text += String.Format("<br />{0}: {1}", dc.ColumnName, dr[dc.ColumnName].ToString());
-                }
+                //foreach(DataColumn dc in dt.Columns)
+                //{
+                //    this.ltlNotResident.Text += String.Format("<br />{0}: {1}", dc.ColumnName, dr[dc.ColumnName].ToString());
+                //}
             }
             else if (dt != null && dt.Rows.Count == 0)
             {
