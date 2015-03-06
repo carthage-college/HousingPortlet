@@ -107,6 +107,7 @@
     <Content Include="Availability_Room_View.ascx" />
     <Content Include="Default_View.ascx" />
     <Content Include="Send_Invitations_View.ascx" />
+    <Content Include="SQL\InsertBuildingsAndRooms.sql" />
     <Content Include="SQL\InsertNewTables.sql" />
   </ItemGroup>
   <ItemGroup>

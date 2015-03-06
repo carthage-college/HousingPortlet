@@ -10,14 +10,22 @@ using Jenzabar.Portal.Framework;
 using Jenzabar.Portal.Framework.Web.UI;
 using CUS.OdbcConnectionClass3;
 
+using System.Text;  //StringBuilder
+using ConfigSettings = Jenzabar.Common.Configuration.ConfigSettings;
+using Jenzabar.Common;  //ObjectFactoryWrapper
+using Jenzabar.Portal.Framework.EmailLogging;   //EmailLogger
+using Jenzabar.Portal.Framework.Facade; //IPortalUserFacade
+using Jenzabar.Common.Mail; //ValidEmail()
+
+
 namespace Housing
 {
     public partial class Default_View : PortletViewBase
     {
-        OdbcConnectionClass3 odbcConn = new OdbcConnectionClass3("ERPDataConnection.config");
-
         public override string ViewName { get { return "Housing Sign-up Application"; } }
 
+        #region Public Members
+        OdbcConnectionClass3 odbcConn = new OdbcConnectionClass3("ERPDataConnection.config");
         public string SpringSession { get { return "RC"; } }
         public string FallSession { get { return "RA"; } }
         //public string CurrentYear { get { return new DateTime().Year.ToString(); } }
@@ -28,12 +36,50 @@ namespace Housing
         //public int UserID { get { return int.Parse(PortalUser.Current.HostID); } }
         public int UserID { get { return 1339128; } }
         //public int UserID { get { return 1259100; } }
+        #endregion
 
         protected void Page_Load(object sender, EventArgs e)
         {
             if (this.IsFirstLoad)
             {
                 InitScreen();
+
+                try
+                {
+                    string emailTo = "mkishline@carthage.edu", emailFrom = "confirmation@carthage.edu", emailSubject = "Test email from portal", emailBody = "<h4>Hi Mike</h4><p>Hope this worked well.</p>";
+                    PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
+                    PortalUser user = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(emailTo);
+                    List<PortalUser> recipients = new List<PortalUser>();
+                    bool emailSuccess = !String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(emailFrom, emailTo, String.Empty, String.Empty, emailSubject, emailBody, System.Web.Mail.MailFormat.Html);
+                    var sbNoEmail = new StringBuilder();
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Message, "Prior to if/else");
+                    if (!emailSuccess)
+                    {
+                        this.ParentPortlet.ShowFeedback(FeedbackType.Message, "email success failed");
+                        //if (sbNoEmail.Length > 0)
+                        //{
+                        //    sbNoEmail.Append(", ");
+                        //}
+                        //sbNoEmail.Append(user.NameDetails.ToString());
+                    }
+                    else
+                    {
+                        this.ParentPortlet.ShowFeedback(FeedbackType.Message, "About to append user");
+                        recipients.Add(user);
+                        this.ParentPortlet.ShowFeedback(FeedbackType.Message, "Appended user");
+                    }
+
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Message, String.Format("<p>User: {0}</p><p>Name Details: {1}", user.ToString(), user.NameDetails.ToString()));
+
+                    if (ConfigSettings.Current.LogEmail && emailSuccess)
+                    {
+                        new EmailLogger().Log(emailSender, recipients, null, null, null, emailSubject, emailBody, null, null);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    //this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Message: {0}<br /><br />Stack Trace: {1}<br /><br />Inner Exception: {2}<br /><br />Result: {3}", ex.Message, ex.StackTrace, ex.InnerException, ex.HResult));
+                }
             }
         }
 
