@@ -1,0 +1,19 @@
+# START - Housing Sign Up
+dn: CN=[CUS] CarthageHousing,OU=PortletTemplates,CN=Portal,O=Jenzabar,C=US
+changetype: add
+jenzabar-ICSNET-GUID:: xRD9OrXr8E2nwIlmLOfMLw==
+objectClass: top
+objectClass: jenzabar-ICSNET-PortletTemplate
+displayName: Housing Sign Up
+jenzabar-ICSNET-PortletPath: Portlet.Housing,Housing.HousingMain
+jenzabar-ICSNET-ApplicationPointer: CN=CUS,OU=PortalApplications,CN=Portal,O=Jenzabar,C=US
+instanceType: 4
+objectCategory: CN=Portlet-Template,CN=Schema,cn=configuration,cn=x
+
+dn: OU=Operations,CN=[CUS] CarthageHousing,OU=PortletTemplates,CN=Portal,O=Jenzabar,C=US
+changetype: add
+objectClass: top
+objectClass: organizationalUnit
+instanceType: 4
+objectCategory: CN=Organizational-Unit,CN=Schema,CN=Configuration,CN=X
+# END - Housing Sign Up
