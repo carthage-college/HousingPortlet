@@ -1,4 +1,4 @@
-﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="Accept_Room.ascx.cs" Inherits="Housing.Accept_Room" %>
+﻿<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="Accept_Room_View.ascx.cs" Inherits="Housing.Accept_Room_View" %>
 <%@ Register Assembly="Jenzabar.Common" Namespace="Jenzabar.Common.Web.UI.Controls" TagPrefix="common" %>
 
 <script type="text/javascript">

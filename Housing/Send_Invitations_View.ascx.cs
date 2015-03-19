@@ -70,13 +70,20 @@ namespace Housing
         protected void sendTestEmail()
         {
             string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
-
-            string emailTo = "mkishline@carthage.edu", emailFrom = "confirmation@carthage.edu", emailSubject = "Test email from portal", emailBody = "<h4>Hi Mike</h4><p>Hope this worked well.</p>";
+            smtpAddress = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu").EmailAddress;
+            /*
+            string emailTo = "mkishline@carthage.edu", emailSubject = "Room Registration";
+            string emailBody = String.Format(
+                @"<p>Congratulations {0}, your reservation for #form.bldg# #form.room# has been entered into our database.</p>
+                <p>If you have any questions pertaining to your housing for the #Year(Now())#-#Year(Now())+1# academic year please contact the Office of Student Life in the Todd Wehr Center.</p>
+                <p>Thank you for using the Housing Selection Process for #Year(Now())#-#Year(Now())+1#.</p>", PortalUser.Current.FirstName
+            );
             if (!String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(smtpAddress, emailTo, String.Empty, String.Empty, emailSubject, emailBody, System.Web.Mail.MailFormat.Html))
             {
                 PortalUser user = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("mkishline@carthage.edu");
                 //PortalUser user2 = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindAllPortalOnlyUsers()
             }
+            */
             /*
             if (!(new Jenzabar.Common.Mail.ValidEmail(emailTo)).IsValid)
             {

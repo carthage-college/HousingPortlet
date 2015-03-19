@@ -15,9 +15,11 @@ namespace Housing
 {
     public partial class Availability_Room_View : PortletViewBase
     {
+        #region Public Variables
         OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
         public static string COMMAND_NAME_ROOM = "PickRoom";
         public bool IsOaks = false;
+        #endregion
 
         public override string ViewName { get { return "Choose A Room"; } }
 
@@ -86,15 +88,20 @@ namespace Housing
 
             string standardRoomSQL = @"
                 SELECT
-                    BuildingCode, RoomID, RoomNumber, [Floor], Wing, Capacity
+                    HB.BuildingCode, HR.RoomID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
                 FROM
-                    CUS_Housing_Room    INNER JOIN  CUS_Housing_Building    ON  CUS_Housing_Room.BuildingID =   CUS_Housing_Building.BuildingID
+                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	HB	ON  HR.BuildingID	=   HB.BuildingID
+								            INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
+																		            AND	HRS.HousingYear	=	YEAR(GETDATE())
                 WHERE
-                    CUS_Housing_Room.BuildingID =   ?
-                ORDER BY RoomNumber";
+                    HR.BuildingID	=   ?
+		            AND
+		            HRS.Gender		IN	(?,'')
+                ORDER BY
+		            HR.RoomNumber";
 
             string oaksRoomSQL = @"
-                SELECT
+	            SELECT
 	                B.BuildingCode, SUBSTRING(R.RoomNumber, 1, 3) AS RoomNumberOnly, R.[Floor], R.Wing, SUM(R.Capacity) AS Capacity,
 	                CASE
 		                WHEN	R.Capacity = 1	THEN	1
@@ -117,14 +124,17 @@ namespace Housing
 					                )
 	                END AS RoomID2
                 FROM
-	                CUS_Housing_Building	B	INNER JOIN	CUS_Housing_Room	R	ON	B.BuildingID	=	R.BuildingID
+	                CUS_Housing_Building	B	INNER JOIN	CUS_Housing_Room		R	ON	B.BuildingID	=	R.BuildingID
+									            INNER JOIN	CUS_Housing_RoomSession	HRS	ON	R.RoomID		=	HRS.RoomID
+																			            AND	HRS.HousingYear	=	YEAR(GETDATE())
                 WHERE
 	                R.BuildingID	=	?
+		            AND
+		            HRS.Gender		IN	(?,'')
                 GROUP BY
 	                B.BuildingCode, SUBSTRING(R.RoomNumber, 1, 3), R.[Floor], R.Wing, Capacity
                 ORDER BY
-	                RoomNumberOnly
-            ";
+	                RoomNumberOnly";
             ex = null;
             DataTable dtRooms = null;
 
@@ -142,12 +152,15 @@ namespace Housing
                 roomParameters.Add(new OdbcParameter("roomBuildingID3", buildingID));
                 roomParameters.Add(new OdbcParameter("roomBuildingID4", buildingID));
             }
+            //The last parameter in both queries is the gender of the student
+            roomParameters.Add(new OdbcParameter("gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
 
             try
             {
                 dtRooms = jicsConn.ConnectToERP(roomSQL, ref ex, roomParameters);
                 if (ex != null) { throw ex; }
 
+                //Complete placeholder that identifies how many rooms matched the search criteria (building and gender)
                 this.ltlBuildingName.Text += String.Format(" ({0} room{1} found)", dtRooms.Rows.Count.ToString(), (dtRooms.Rows.Count == 1 ? "" :"s"));
             }
             catch (Exception ee)

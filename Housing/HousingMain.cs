@@ -25,7 +25,7 @@ namespace Housing
                     break;
                 //Accept the terms and conditions of the room
                 case "AcceptRoom":
-                    screen = this.LoadPortletView("ICS/Portlet.Housing/Accept_Room.ascx");
+                    screen = this.LoadPortletView("ICS/Portlet.Housing/Accept_Room_View.ascx");
                     break;
                 case "SendInvitations":
                     screen = this.LoadPortletView("ICS/Portlet.Housing/Send_Invitations_View.ascx");

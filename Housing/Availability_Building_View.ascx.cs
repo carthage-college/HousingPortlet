@@ -28,14 +28,30 @@ namespace Housing
         private void InitScreen()
         {
             //Get the building information
-            string buildingSQL = "SELECT BuildingID, BuildingName, BuildingCode FROM CUS_Housing_Building ORDER BY BuildingName";
+            string buildingSQL = @"
+                SELECT
+		            HB.BuildingID, HB.BuildingName, HB.BuildingCode
+	            FROM
+		            CUS_Housing_Building	HB	INNER JOIN	CUS_Housing_Room		HR	ON	HB.BuildingID	=	HR.BuildingID
+									            INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
+	            WHERE
+		            HRS.Gender		IN	('', ?)
+	            GROUP BY
+		            HB.BuildingID, HB.BuildingName, HB.BuildingCode
+	            ORDER BY
+		            HB.BuildingName
+            ";
             Exception ex = null;
             DataTable dt = null;
+            List<OdbcParameter> parameters = new List<OdbcParameter>
+            {
+                new OdbcParameter("StudentGender", this.ParentPortlet.PortletViewState["Gender"].ToString())
+            };
 
             try
             {
                 //Perform the query
-                dt = jicsConn.ConnectToERP(buildingSQL, ref ex);
+                dt = jicsConn.ConnectToERP(buildingSQL, ref ex, parameters);
                 if (ex != null) { throw ex; }
             }
             catch(Exception ee)

@@ -1,4 +1,4 @@
-USE ICS_NET_CF
+USE ICS_NET_TEST
 --SELECT COUNT(*) FROM dbo.CUS_Housing_Building
 --SELECT COUNT(*) FROM CUS_Housing_Room
 
@@ -9,6 +9,7 @@ BEGIN TRANSACTION
 		BEGIN
 			DELETE FROM dbo.CUS_Housing_Room;
 			DELETE FROM dbo.CUS_Housing_Building;
+			PRINT 'Deleted data from CUS_Housing_Room and CUS_Housing_Building';
 		END
 
 	--Create the campus
@@ -20,6 +21,9 @@ BEGIN TRANSACTION
 		(NEWID(), 'Oaks 3', 'OAK3'),			(NEWID(), 'Oaks 4', 'OAK4'),
 		(NEWID(), 'Oaks 5', 'OAK5'),			(NEWID(), 'Oaks 6', 'OAK6'),
 		(NEWID(), 'Swenson', 'SWE'),			(NEWID(), 'Tarble', 'TAR');
+
+	DECLARE	@buildingsCreated INT	=	(SELECT COUNT(*) FROM CUS_Housing_Building);
+	PRINT 'Created ' + CAST(@buildingsCreated AS VARCHAR) + ' buildings';
 
 	DECLARE @apt	UNIQUEIDENTIFIER	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'APT'),
 			@den	UNIQUEIDENTIFIER	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN'),
@@ -252,7 +256,7 @@ BEGIN TRANSACTION
 		(NewID(), @oak6, '412A', '4', '4', 1, ''), (NewID(), @oak6, '412B', '4', '4', 1, ''), (NewID(), @oak6, '413A', '4', '4', 1, ''), (NewID(), @oak6, '413B', '4', '4', 1, ''), (NewID(), @oak6, '414', '4', '4', 2, ''),
 		(NewID(), @oak6, '500', '5', '5', 2, ''), (NewID(), @oak6, '501A', '5', '5', 1, ''), (NewID(), @oak6, '501B', '5', '5', 1, ''), (NewID(), @oak6, '502A', '5', '5', 1, ''), (NewID(), @oak6, '502B', '5', '5', 1, ''),
 		(NewID(), @oak6, '503A', '5', '5', 1, ''), (NewID(), @oak6, '503B', '5', '5', 1, ''), (NewID(), @oak6, '511A', '5', '5', 1, ''), (NewID(), @oak6, '511B', '5', '5', 1, ''), (NewID(), @oak6, '512A', '5', '5', 1, ''),
-		(NewID(), @oak6, '512B', '5', '5', 1, ''), (NewID(), @oak6, '513A', '5', '5', 1, ''), (NewID(), @oak6, '513B', '5', '5', 1, ''), (NewID(), @oak6, '514', '5', '5', 2, '')
+		(NewID(), @oak6, '512B', '5', '5', 1, ''), (NewID(), @oak6, '513A', '5', '5', 1, ''), (NewID(), @oak6, '513B', '5', '5', 1, ''), (NewID(), @oak6, '514', '5', '5', 2, '');
 		
 	INSERT INTO dbo.CUS_Housing_Room (RoomID, BuildingID, RoomNumber, [Floor], Wing, Capacity, DefaultGender)
 	VALUES
@@ -285,5 +289,8 @@ BEGIN TRANSACTION
 		(NewID(), @tar , '409', '4', 'L', 2, 'F'), (NewID(), @tar , '410', '4', 'L', 1, 'F'), (NewID(), @tar , '411', '4', 'L', 2, 'F'), (NewID(), @tar , '412', '4', 'L', 2, 'F'), (NewID(), @tar , '413', '4', 'L', 2, 'F'),
 		(NewID(), @tar , '414', '4', 'L', 2, 'F'), (NewID(), @tar , '415', '4', 'L', 2, 'F'), (NewID(), @tar , '416', '4', 'L', 2, 'F'), (NewID(), @tar , '418', '4', 'L', 2, 'F'), (NewID(), @tar , '420', '4', 'L', 1, 'F'),
 		(NewID(), @tar , '450', '4', 'S', 1, 'F'), (NewID(), @tar , '451', '4', 'S', 2, 'F'), (NewID(), @tar , '452', '4', 'S', 2, 'F'), (NewID(), @tar , '453', '4', 'S', 2, 'F'), (NewID(), @tar , '454', '4', 'S', 2, 'F'),
-		(NewID(), @tar , '455', '4', 'S', 2, 'F'), (NewID(), @tar , '456', '4', 'S', 2, 'F'), (NewID(), @tar , '458', '4', 'S', 2, 'F'), (NewID(), @tar , '460', '4', 'S', 2, 'F')
+		(NewID(), @tar , '455', '4', 'S', 2, 'F'), (NewID(), @tar , '456', '4', 'S', 2, 'F'), (NewID(), @tar , '458', '4', 'S', 2, 'F'), (NewID(), @tar , '460', '4', 'S', 2, 'F');
+
+	DECLARE	@createdRooms	INT	=	(SELECT COUNT(*) FROM CUS_Housing_Room);
+	PRINT 'Created ' + CAST(@createdRooms AS VARCHAR) + ' rooms';
 ROLLBACK

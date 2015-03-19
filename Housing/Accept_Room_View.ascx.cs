@@ -6,18 +6,24 @@ using System.Linq;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
+using ConfigSettings = Jenzabar.Common.Configuration.ConfigSettings;
+using Jenzabar.Common;                          //ObjectFactoryWrapper
+using Jenzabar.Common.Mail;                     //ValidEmail()
 using Jenzabar.Portal.Framework;
+using Jenzabar.Portal.Framework.EmailLogging;   //EmailLogger
+using Jenzabar.Portal.Framework.Facade;         //IPortalUserFacade
 using Jenzabar.Portal.Framework.Web.UI;
 using CUS.OdbcConnectionClass3;
 
 namespace Housing
 {
-    public partial class Accept_Room : PortletViewBase
+    public partial class Accept_Room_View : PortletViewBase
     {
         #region Define Variables
         public OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
         public string CurrentYear { get { return DateTime.Now.Year.ToString(); } }
         public string NextYear { get { return (int.Parse(CurrentYear) + 1).ToString(); } }
+        public string AcademicYear { get { return String.Format("{0} - {1}", CurrentYear, NextYear); } }
         #endregion
 
         //Set page title
@@ -62,6 +68,7 @@ namespace Housing
                 this.ltlNewBuildingRoom.Text = formattedRoomNumber;
                 this.btnSubmit.Text = String.Format("Sign up for {0}", formattedRoomNumber);
 
+
                 //Set visibility of controls based on query results
                 //Only show the apartment contract if the student signed up for the apartments
                 this.panelApartmentContract.Visible = room["BuildingCode"].ToString() == "APT";
@@ -84,8 +91,51 @@ namespace Housing
         {
             if (this.chkAgree.Checked)
             {
-                this.ParentPortlet.PortletViewState["Registered"] = true;
-                this.ParentPortlet.NextScreen("SendInvitations");
+                string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
+                PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
+                smtpAddress = emailSender.EmailAddress;
+                string emailTo = "mkishline@carthage.edu", emailSubject = "Room Registration";
+
+                //Get information about the selected room
+                string roomSQL = "SELECT Building.BuildingName, Building.BuildingCode, Room.RoomNumber FROM CUS_Housing_Room Room INNER JOIN CUS_Housing_Building Building ON Room.BuildingID = Building.BuildingID WHERE RoomID = ?";
+                Exception ex = null;
+                DataTable dtRoom = null;
+            
+                List<OdbcParameter> parameters = new List<OdbcParameter>
+                {
+                    new OdbcParameter("roomID", this.ParentPortlet.PortletViewState["RoomID"].ToString())
+                };
+                try
+                {
+                    //Get results from database
+                    dtRoom = jicsConn.ConnectToERP(roomSQL, ref ex, parameters);
+                    DataRow room = dtRoom.Rows[0];
+                    string formattedRoom = String.Format("{0} {1}", room["BuildingName"].ToString(), room["RoomNumber"].ToString());
+
+                    string emailBody = String.Format(
+                        @"<p>Congratulations {0}, your reservation for {1} has been entered into our database.</p>
+                        <p>If you have any questions pertaining to your housing for the {2} academic year please contact the Office of Student Life in the Todd Wehr Center.</p>
+                        <p>Thank you for using the Housing Selection Process for {3}.</p>"
+                    , PortalUser.Current.FirstName, formattedRoom, AcademicYear, AcademicYear
+                    );
+
+                    //TODO: Change emailTo to PortalUser.Current.EmailAddress
+                    bool emailSuccess = !String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(smtpAddress, emailTo, emailSubject, emailBody);
+                    //If the system is configured to log sent emails and the email was sent successfully create a record of it in the database 
+                    if (ConfigSettings.Current.LogEmail && emailSuccess)
+                    {
+                        List<PortalUser> recipients = new List<PortalUser>();
+                        recipients.Add(PortalUser.Current);
+                        new EmailLogger().Log(emailSender, recipients, null, null, null, emailSubject, emailBody, null, null);
+                    }
+
+                    this.ParentPortlet.PortletViewState["Registered"] = true;
+                    this.ParentPortlet.NextScreen("SendInvitations");
+                }
+                catch (Exception ee)
+                {
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException));
+                }
             }
             else
             {

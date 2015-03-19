@@ -10,7 +10,7 @@
 namespace Housing {
     
     
-    public partial class Accept_Room {
+    public partial class Accept_Room_View {
         
         /// <summary>
         /// errMsg control.
