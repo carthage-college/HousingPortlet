@@ -110,6 +110,8 @@
     <Content Include="Availability_Room_View.ascx" />
     <Content Include="Default_View.ascx" />
     <Content Include="Send_Invitations_View.ascx" />
+    <Content Include="SQL\Create_spHousingRegisterRoom.sql" />
+    <Content Include="SQL\InitializeRoomSessionAndOccupant.sql" />
     <Content Include="SQL\InsertBuildingsAndRooms.sql" />
   </ItemGroup>
   <ItemGroup>

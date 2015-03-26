@@ -68,7 +68,6 @@ namespace Housing
             if (dt != null)
             {
                 //Bind the dataset to the bulleted list
-                //TODO: Should there be a secondary step that disables buildings based on user-data or should those building be excluded from the list through the query?
                 this.bulletedBuildings.DataSource = dt;
                 this.bulletedBuildings.DataTextField = "BuildingName";
                 this.bulletedBuildings.DataValueField = "BuildingID";

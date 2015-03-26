@@ -26,12 +26,11 @@ namespace Housing
 
         #region Public Members
         OdbcConnectionClass3 odbcConn = new OdbcConnectionClass3("ERPDataConnection.config");
+        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
         public string SpringSession { get { return "RC"; } }
         public string FallSession { get { return "RA"; } }
-        //public string CurrentYear { get { return new DateTime().Year.ToString(); } }
-        public string CurrentYear { get { return "2014"; } }
+        public string CurrentYear { get { return DateTime.Now.Year.ToString(); } }
         public string NextYear { get { return (int.Parse(CurrentYear) + 1).ToString(); } }
-        //public string BeginInvolvement { get { return (int.Parse(CurrentYear) - 3).ToString() + "-01-01"; } }
         public string BeginInvolvement { get { return "1/1/" + (int.Parse(CurrentYear) - 3).ToString(); } }
         public int UserID { get { return int.Parse(PortalUser.Current.HostID); } }
         //public int UserID { get { return 1339128; } }
@@ -43,48 +42,100 @@ namespace Housing
             if (this.IsFirstLoad)
             {
                 InitScreen();
-
-                try
-                {
-                    /*
-                    bool emailSuccess = !String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(emailFrom, emailTo, String.Empty, String.Empty, emailSubject, emailBody, System.Web.Mail.MailFormat.Html);
-                    this.ParentPortlet.ShowFeedback(FeedbackType.Message, "Prior to if/else");
-                    if (!emailSuccess)
-                    {
-                        this.ParentPortlet.ShowFeedback(FeedbackType.Message, "email success failed");
-                    }
-                    else
-                    {
-                        recipients.Add(user);
-                    }
-
-                    this.ParentPortlet.ShowFeedback(FeedbackType.Message, String.Format("<p>User: {0}</p><p>Name Details: {1}", user.ToString(), user.NameDetails.ToString()));
-                    */
-                }
-                catch (Exception ex)
-                {
-                    //this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Message: {0}<br /><br />Stack Trace: {1}<br /><br />Inner Exception: {2}<br /><br />Result: {3}", ex.Message, ex.StackTrace, ex.InnerException, ex.HResult));
-                }
             }
         }
 
         protected void InitScreen()
         {
+            //Select start date for RAs (isRA = 1) and general student population (isRA = 0)
+            string getStartDateSQL = @"
+                SELECT
+                    startdate, 1 AS isRA
+                FROM
+                    CUS_HousingSelectionStartdate
+                WHERE
+                    id  =   1
+                UNION
+                SELECT
+                    startdate, 0 AS isRA
+                FROM
+                    CUS_HousingSelectionStartdate
+                WHERE
+                    id  =   2
+            ";
+            Exception exStartDate = null;
+            DataTable dtStartDate = null;
+            DateTime? raStartDate = null, generalStartDate = null;
+
+            try
+            {
+                dtStartDate = jicsConn.ConnectToERP(getStartDateSQL, ref exStartDate);
+                if (exStartDate != null) { throw exStartDate; }
+                if (dtStartDate.Rows.Count == 2)
+                {
+                    raStartDate = DateTime.Parse(dtStartDate.Rows[0]["startdate"].ToString());
+                    generalStartDate = DateTime.Parse(dtStartDate.Rows[1]["startdate"].ToString());
+                }
+                else
+                {
+                    //TODO: If there are not start dates for both RAs and the general population what should we do? Attempt to automatically determine the values? Email Nina or an administrator?
+                }
+            }
+            catch (Exception ee)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Start date exception: {0}<br /><br />{1}", ee.Message, ee.InnerException));
+            }
+
+            //Check if the student has already signed up for a room in the current housing period
+            string upcomingHousingSQL = @"
+                SELECT
+                    HB.BuildingName, HR.RoomNumber, HRStu.RegistrationTime
+                FROM
+                    CUS_Housing_Building    HB  INNER JOIN  CUS_Housing_Room        HR      ON  HB.BuildingID       =   HR.BuildingID
+                                                INNER JOIN  CUS_Housing_RoomSession HRS     ON  HR.RoomID           =   HRS.RoomID
+                                                                                            AND HRS.HousingYear     =   YEAR(GETDATE())
+                                                LEFT JOIN   CUS_Housing_RoomStudent HRStu   ON  HRS.RoomSessionID   =   HRStu.RoomSessionID
+                WHERE
+                    HRStu.StudentID =   ?
+            ";
+            Exception exUpcomingHousing = null;
+            DataTable dtUpcomingHousing = null;
+            DataRow drUpcomingHousing = null;
+            List<OdbcParameter> upcomingHousingParams = new List<OdbcParameter>
+            {
+                new OdbcParameter("StudentID", PortalUser.Current.Guid)
+            };
+
+            try
+            {
+                dtUpcomingHousing = jicsConn.ConnectToERP(upcomingHousingSQL, ref exUpcomingHousing, upcomingHousingParams);
+                if (exUpcomingHousing != null) { throw exUpcomingHousing; }
+                //If the student has signed up for a room, load a DataRow object with the information about their registration (Building, Room, Registration Time)
+                if (dtUpcomingHousing != null && dtUpcomingHousing.Rows.Count > 0)
+                {
+                    drUpcomingHousing = dtUpcomingHousing.Rows[0];
+                }
+            }
+            catch (Exception ee)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException));
+            }
+            finally
+            {
+                if (jicsConn.IsNotClosed()) { jicsConn.Close(); }
+            }
+
             string studentSQL = String.Format(@"
                     SELECT
                         id_rec.id, TRIM(id_rec.firstname) AS firstname, TRIM(id_rec.lastname) AS lastname, profile_rec.sex, NVL(stu_stat_rec.cum_earn_hrs, 0) AS career_hours, TRIM(NVL(curbldg.txt,'')) AS bldg,
                         TRIM(NVL(stu_serv_rec.room,'')) AS room, NVL(stu_acad_rec.reg_hrs, 0) AS registered_hours, NVL(ADVpay.hld,'') AS advpayhold, NVL(UNBal.hld,'') AS unbal_hold,
-                        NVL(invl_rec.invl,'') AS greekid, TRIM(NVL(invl_rec.org,'')) AS greek_name, TRIM(NVL(newbldg.txt,'')) AS upcoming_bldg, TRIM(NVL(upcoming.room,'')) AS upcoming_room
+                        NVL(invl_rec.invl,'') AS greekid, TRIM(NVL(invl_rec.org,'')) AS greek_name
                     FROM id_rec	INNER JOIN	profile_rec			        ON	id_rec.id			=	profile_rec.id
                                 LEFT JOIN	stu_stat_rec		        ON	id_rec.id			=	stu_stat_rec.id
                                 LEFT JOIN	stu_serv_rec		        ON	id_rec.id			=	stu_serv_rec.id
 											                            AND	stu_serv_rec.sess	=	?
 											                            AND	stu_serv_rec.yr		=	{0}
                                 LEFT JOIN   bldg_table      curbldg     ON  stu_serv_rec.bldg   =   curbldg.bldg
-			                    LEFT JOIN	stu_serv_rec	upcoming	ON	id_rec.id	        =	upcoming.id
-											                            AND	upcoming.sess		=	?
-											                            AND	upcoming.yr			=	stu_serv_rec.yr
-                                LEFT JOIN   bldg_table      newbldg     ON  upcoming.bldg       =   newbldg.bldg
 			                    LEFT JOIN	stu_acad_rec		        ON	id_rec.id			=	stu_acad_rec.id
 											                            AND	stu_acad_rec.sess	=	?
 											                            AND	stu_acad_rec.yr		=	stu_serv_rec.yr
@@ -101,11 +152,11 @@ namespace Housing
                 ", CurrentYear, UserID.ToString());
 
             List<OdbcParameter> parameters = new List<OdbcParameter>
-                {
-                      new OdbcParameter("SpringSess", SpringSession)
-                    , new OdbcParameter("FallSess", FallSession)
-                    , new OdbcParameter("FallSess2", FallSession)
-                };
+            {
+                  new OdbcParameter("SpringSess", SpringSession)
+                , new OdbcParameter("FallSess", FallSession)
+            };
+
             Exception ex = null;
             DataTable dt = null;
 
@@ -121,7 +172,7 @@ namespace Housing
             {
                 //If an exception was thrown, display the message to the user.
                 //TODO: Consider turning this off unless the user is an administrator. Alternatively, throw custom exceptions where possible with more readable errors.
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException.ToString()));
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Student data exception: {0}<br /><br />{1}", ee.Message, ee.InnerException.ToString()));
             }
             finally
             {
@@ -136,22 +187,26 @@ namespace Housing
                 
                 this.ltlStudentName.Text = String.Format("{0} {1}", dr["firstname"].ToString(), dr["lastname"].ToString());
 
-                this.ltlRegisteredHousing.Text = String.Format("{0} {1}", dr["upcoming_bldg"].ToString(), dr["upcoming_room"].ToString()).Trim();
-                //this.panelRegistered.Visible = this.ltlRegisteredHousing.Text.Length > 0;
+                //this.ltlRegisteredHousing.Text = String.Format("{0} {1}", dr["upcoming_bldg"].ToString(), dr["upcoming_room"].ToString()).Trim();
+                if (drUpcomingHousing != null)
+                {
+                    this.ltlRegisteredHousing.Text = String.Format("{0}: {1}", drUpcomingHousing["BuildingName"].ToString(), drUpcomingHousing["RoomNumber"].ToString());
+                    this.ltlRegisteredDateTime.Text = String.Format("{0:hh:mm:ss tt on dddd MMMM d, yyyy}", drUpcomingHousing["RegistrationTime"].ToString());
 
-                DateTime registeredDateTime = DateTime.Now;
-                this.ltlRegisteredDateTime.Text = String.Format("{0:hh:mm:ss tt on dddd MMMM d, yyyy}", registeredDateTime);
-                //TODO: Load roommate list
-                //this.bulletedRoommates - load roommate list
+                    //TODO: Load roommate list
+                    //this.bulletedRoommates - load roommate list
+                }
+                this.panelRegistered.Visible = drUpcomingHousing != null;
 
-                //this.panelCommuter.Visible = this.ltlRegisteredHousing.Text == "CMTR";
+                this.panelCommuter.Visible = this.ltlRegisteredHousing.Text == "CMTR";
 
-                //this.panelUnregistered.Visible = this.ltlRegisteredHousing.Text.Length == 0;
+                this.panelUnregistered.Visible = drUpcomingHousing == null;
 
                 this.ltlGreekStatus.Text = dr["greek_name"].ToString().Length > 0 ? String.Format("a member of {0}", dr["greek_name"].ToString()) : "not a member of a residential fraternity or sorority";
+                this.ParentPortlet.PortletViewState["GreekID"] = dr["greekid"].ToString();
                 //this.ltlHold.Text = ""; //"not"
                 this.ltlHold.Text = String.Format("{0} {1}", dr["advPayHold"].ToString(), dr["unbal_hold"].ToString()).Trim();
-                //this.contentHoldDetail.Visible = this.ltlHold.Text.Length > 0;
+                this.contentHoldDetail.Visible = this.ltlHold.Text.Length > 0;
                 //A student must be registered for 12 or more credits in the upcoming semester
                 this.ltlRegistered.Text = int.Parse(dr["registered_hours"].ToString()) >= 12 ? "" : "not";
                 
@@ -177,11 +232,14 @@ namespace Housing
                 //Display the total number of credit hours earned by the student over their academic career
                 this.ltlCareerCredits.Text = dr["career_hours"].ToString();
 
+                //Show the building and room number the student currently occupies
                 this.ltlCurrentHousing.Text = String.Format("{0} {1}", dr["bldg"].ToString(), dr["room"].ToString());
-                //this.panelCurrentHousing.Visible = this.ltlCurrentHousing.Text.Length > 0;
-                //this.ltlNotResident.Visible = this.ltlCurrentHousing.Text.Length == 0;
+                this.panelCurrentHousing.Visible = this.ltlCurrentHousing.Text.Length > 0;
+                this.ltlNotResident.Visible = this.ltlCurrentHousing.Text.Length == 0;
 
                 bool isValidTime = true, mayRegister = true, hasDefinedGender = this.ParentPortlet.PortletViewState["Gender"].ToString() != "";
+                //isValidTime = DateTime.Now >= generalStartDate && DateTime.Now <= generalStartDate.Value.AddDays(2);
+                //this.ParentPortlet.ShowFeedback(FeedbackType.Message, generalStartDate.Value.AddDays(2).ToString());
                 //this.lnkAvailability.Visible = isValidTime && mayRegister;
                 //this.ltlCannotRegister.Visible = isValidTime && !mayRegister;
                 //this.ltlInvalidTime.Visible = !isValidTime;

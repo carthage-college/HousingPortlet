@@ -6,7 +6,7 @@
         $('#<%= chkAgree.ClientID %>').click(function () {
             $('#<%= btnSubmit.ClientID %>').prop('disabled', $(this).prop('checked') ? '' : 'disabled');
         });
-        $('#<%= btnSubmit.ClientID %>').prop('disabled', $(this).prop('checked') ? '' : 'disabled');
+        $('#<%= btnSubmit.ClientID %>').prop('disabled', $('#<%= chkAgree.ClientID %>').prop('checked') ? '' : 'disabled');
     });
 </script>
 
