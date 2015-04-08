@@ -184,6 +184,51 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.Literal ltlNotResident;
         
         /// <summary>
+        /// panelInvitations control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelInvitations;
+        
+        /// <summary>
+        /// repeaterInvites control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repeaterInvites;
+        
+        /// <summary>
+        /// panelExtendedInvitations control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelExtendedInvitations;
+        
+        /// <summary>
+        /// repeaterExtendedInvites control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repeaterExtendedInvites;
+        
+        /// <summary>
+        /// panelAvailability control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelAvailability;
+        
+        /// <summary>
         /// subhdrAvailability control.
         /// </summary>
         /// <remarks>
@@ -211,12 +256,39 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.Literal ltlCannotRegister;
         
         /// <summary>
-        /// ltlInvalidTime control.
+        /// panelOverview control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltlInvalidTime;
+        protected global::System.Web.UI.WebControls.Panel panelOverview;
+        
+        /// <summary>
+        /// ltlRegisterGreek control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlRegisterGreek;
+        
+        /// <summary>
+        /// ltlGreekSquatterDay control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlGreekSquatterDay;
+        
+        /// <summary>
+        /// ltlFirstRegisterDateTime control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlFirstRegisterDateTime;
     }
 }

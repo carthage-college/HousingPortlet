@@ -111,12 +111,13 @@ namespace Housing
                 //  -3 [The student is already in a room]
                 //  -4 [Invalid student gender]
                 //  -5 [Unknown error]
-                string registerSQL = "EXECUTE dbo.CUS_spHousingRegisterRoom @uuidStudentID = ?, @uuidRoomSessionID = ?, @strGender = ?";
+                string registerSQL = "EXECUTE dbo.CUS_spHousingRegisterRoom @uuidStudentID = ?, @uuidRoomSessionID = ?, @strGender = ?, @oaksWaitlist = ?";
                 List<OdbcParameter> registerParameters = new List<OdbcParameter>
                 {
                       new OdbcParameter("StudentID", PortalUser.Current.Guid)
                     , new OdbcParameter("RoomSessionID", this.ParentPortlet.PortletViewState["RoomSessionID"].ToString())
                     , new OdbcParameter("StudentGender", this.ParentPortlet.PortletViewState["Gender"].ToString())
+                    , new OdbcParameter("Waitlist", this.chkOaksWaitlist.Checked ? "Y" : "N")
                 };
 
                 Exception exRegister = null;
@@ -157,7 +158,7 @@ namespace Housing
 
                         string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
                         PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
-                        smtpAddress = emailSender.EmailAddress;
+                        smtpAddress = Email.GetProperEMailAddress(emailSender.EmailAddress);
                         string emailTo = "mkishline@carthage.edu", emailSubject = "Room Registration";
 
                         List<OdbcParameter> parameters = new List<OdbcParameter>

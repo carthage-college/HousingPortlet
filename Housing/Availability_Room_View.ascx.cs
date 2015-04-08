@@ -10,13 +10,12 @@ using Jenzabar.Portal.Framework;
 using Jenzabar.Portal.Framework.Web.UI;
 using CUS.OdbcConnectionClass3;
 
-
 namespace Housing
 {
     public partial class Availability_Room_View : PortletViewBase
     {
         #region Public Variables
-        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
+        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
         public static string COMMAND_NAME_ROOM = "PickRoom";
         public bool IsOaks = false;
         #endregion
@@ -87,9 +86,9 @@ namespace Housing
             }
 
             // Params: [0] = GreekID (invl_table.invl), [1] = Gender, [2] = StudentID
-            string greekSquatterSQL = @"
+            string greekSquatterSQL = String.Format(@"
                 SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity, COUNT(HRStu.RoomStudentID) AS Occupancy
+                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy
                 FROM
                     CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB		ON  HR.BuildingID		=   HB.BuildingID
 								            INNER JOIN	CUS_Housing_RoomSession	    HRS		ON	HR.RoomID			=	HRS.RoomID
@@ -100,21 +99,29 @@ namespace Housing
                     HSG.invl     	=   ?
 		            AND
 		            HRS.Gender		IN	(?,'')
+                    AND
+                    HR.[Capacity]   >   0
+                GROUP BY
+					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
                 UNION
                 SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity, COUNT(HRStu.RoomStudentID) AS Occupancy
+                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy
                 FROM
                     CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB		ON  HR.BuildingID		=   HB.BuildingID
 								            INNER JOIN	CUS_Housing_RoomSession	    HRS		ON	HR.RoomID			=	HRS.RoomID
 																					    	AND	HRS.HousingYear		=	YEAR(GETDATE())
                                             INNER JOIN  CUS_Housing_SessionOccupant HSO     ON  HRS.RoomSessionID   =   HSO.RoomSessionID
 											LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
+                                            INNER JOIN  FWK_User                    FU      ON  HSO.StudentID       =   FU.ID
                 WHERE
-                    HSO.StudentID   =   ?
+                    FU.HostID       =   {0}
+                    AND
+                    HR.[Capacity]   >   0
                 GROUP BY
 					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
                 ORDER BY
-		            HR.RoomNumber";
+		            HR.RoomNumber
+            ", PortalUser.Current.HostID);
 
             //Params: [0] = BuildingID, [1] = Gender
             string standardRoomSQL = @"
@@ -129,6 +136,8 @@ namespace Housing
                     HR.BuildingID	=   ?
 		            AND
 		            HRS.Gender		IN	(?,'')
+                    AND
+                    HR.Capacity     >   0
                 GROUP BY
 					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
                 ORDER BY
@@ -141,7 +150,7 @@ namespace Housing
 	                CASE
 		                WHEN	SubRoom.Capacity = 1	THEN	1
 										                ELSE	0
-	                END AS isSuite,
+	                END AS IsSuite,
 	                (
 		                SELECT TOP 1
 			                HRSsub.RoomSessionID
@@ -181,6 +190,8 @@ namespace Housing
 								                LEFT JOIN	CUS_Housing_RoomStudent	HRS		ON	SubRoom.RoomSessionID	=	HRS.RoomSessionID
                 WHERE
 	                SubRoom.Gender		IN	(?,'')
+                    AND
+                    SubRoom.Capacity    >   0
                 GROUP BY
 	                B.BuildingID, B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, Capacity
                 ORDER BY
@@ -189,14 +200,27 @@ namespace Housing
             ex = null;
             DataTable dtRooms = null;
 
-            string roomSQL = IsOaks ? oaksRoomSQL : standardRoomSQL;
+            int dayIndex = int.Parse(this.ParentPortlet.PortletViewState["DayIndex"].ToString());
+            string roomSQL = dayIndex == 0 ? greekSquatterSQL : (IsOaks ? oaksRoomSQL : standardRoomSQL);
+
+            List<OdbcParameter> roomParameters = new List<OdbcParameter>();
+            if (dayIndex == 0)
+            {
+                roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
+                roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
+            }
+            else if(dayIndex > 0 && dayIndex < 4)
+            {
+                roomParameters.Add(new OdbcParameter("RoomBuildingID", buildingID));
+                roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
+            }
 
             //Reusing the same OdbcParameter list ("parameters" from the query above) throws an exception so recreate the query parameters in a separate list.
-            List<OdbcParameter> roomParameters = new List<OdbcParameter>
-            {
-                new OdbcParameter("roomBuildingID", buildingID)
-                , new OdbcParameter("gender", this.ParentPortlet.PortletViewState["Gender"].ToString())
-            };
+            //List<OdbcParameter> roomParameters = new List<OdbcParameter>
+            //{
+            //    new OdbcParameter("roomBuildingID", buildingID)
+            //    , new OdbcParameter("gender", this.ParentPortlet.PortletViewState["Gender"].ToString())
+            //};
 
             try
             {
@@ -256,6 +280,11 @@ namespace Housing
             }
         }
 
+        /// <summary>
+        /// Store value of the clicked element and direct the user to the next screen (Accept terms and conditions to finish registering for a room).
+        /// </summary>
+        /// <param name="sender">Object representing the button that was clicked</param>
+        /// <param name="e"></param>
         void chooseBed_Click(object sender, EventArgs e)
         {
             Button clicked = (sender as Button);
@@ -276,40 +305,6 @@ namespace Housing
             this.ParentPortlet.PreviousScreen("AvailabilityBuilding");
         }
 
-        public class Room
-        {
-            private string roomID;
-            private string roomNumber;
-            private string floor;
-            private string wing;
-            private int capacity;
-
-            public Room(string RoomID, string RoomNumber, string Floor, string Wing, int Capacity)
-            {
-                this.roomID = RoomID;
-                this.roomNumber = RoomNumber;
-                this.floor = Floor;
-                this.wing = Wing;
-                this.capacity = Capacity;
-            }
-
-            public string RoomID { get { return this.roomID; } }
-            public string RoomNumber { get { return this.roomNumber; } }
-            public string Floor { get { return this.floor; } }
-            public string Wing { get { return this.wing; } }
-            public int Capacity { get { return this.capacity; } }
-        }
-
-        protected void rptRoomList_ItemCommand(object source, RepeaterCommandEventArgs e)
-        {
-            if (e.CommandName == COMMAND_NAME_ROOM)
-            {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Message, String.Format("{0} : {1}", e.CommandArgument, e.CommandName));
-                this.ParentPortlet.PortletViewState["RoomSessionID"] = e.CommandArgument;
-                this.ParentPortlet.NextScreen("AcceptRoom");
-            }
-        }
-
         /// <summary>
         /// Based on the RoomSessionID and bed index, determine whether the space is already occupied for the current housing session.
         /// If so, display the name of the occupant. If not, provide a button the user may click to select the room.
@@ -319,6 +314,30 @@ namespace Housing
         /// <returns></returns>
         public Control BuildBedControl(string RoomSessionID, string BedIndex)
         {
+            string invitationSQL = @"
+                SELECT
+                    HRR.StudentID, FU.FirstName, FU.LastName
+                FROM
+                    CUS_Housing_RoomReservation HRR INNER JOIN  FWK_User    FU  ON  HRR.StudentID   =   FU.ID
+                WHERE
+                    HRR.RoomSessionID   =   ?
+                ORDER BY
+                    HRR.ReservationTime
+            ";
+            Exception exInvitation = null;
+            DataTable dtInvitation = null;
+            List<OdbcParameter> paramInvite = new List<OdbcParameter> { new OdbcParameter("RoomSessionID", RoomSessionID) };
+
+            try
+            {
+                dtInvitation = jicsConn.ConnectToERP(invitationSQL, ref exInvitation, paramInvite);
+                if (exInvitation != null) { throw exInvitation; }
+            }
+            catch (Exception ex)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error retrieving invitations:<br />{0}<br />{1}", ex.Message, ex.InnerException));
+            }
+
             //Define SQL to get name details about the occupant
             string getOccupantSQL = @"
                 SELECT
@@ -329,19 +348,18 @@ namespace Housing
                     HRStu.RoomSessionID =   ?
             ";
 
-            //The object to be passed back (during initial phase this was either a Button or Literal object
+            //Define parameter for query
+            List<OdbcParameter> paramBed = new List<OdbcParameter> { new OdbcParameter("bedRoomSessionID", RoomSessionID) };
+
+            //The object to be passed back (during initial phase this was either a Button or Literal object)
             Control returnObj = null;
             Exception exBed = null;
             DataTable dtBed = null;
             int bedNumber = -1;
             bool bedIsNumber = int.TryParse(BedIndex, out bedNumber);
+
             try
             {
-                //Define parameter for query
-                List<OdbcParameter> paramBed = new List<OdbcParameter>
-                {
-                    new OdbcParameter("bedRoomSessionID", RoomSessionID)
-                };
                 //Execute SQL
                 dtBed = jicsConn.ConnectToERP(getOccupantSQL, ref exBed, paramBed);
                 //If the executed SQL or the attempt to establish a database connection generates an exception, throw it to be handled by the "catch" below
@@ -349,25 +367,39 @@ namespace Housing
 
                 //If no occupant records are found, the bed is empty so create a button the user may select to sign up for the bed
                 //If there are rows but the number of them is less than the current bed index, create the button
-                if (dtBed.Rows.Count == 0 || dtBed.Rows.Count < bedNumber)
+                if (dtBed != null && (dtBed.Rows.Count == 0 || dtBed.Rows.Count < bedNumber))
                 {
                     Button btnBed = new Button();
                     btnBed.Click += chooseBed_Click;
                     btnBed.CommandArgument = RoomSessionID;
+                    btnBed.CssClass = "bedOccupant";
                     btnBed.Text = String.Format("Bed {0}", BedIndex);
+
+                    bedNumber = bedIsNumber ? bedNumber : (BedIndex == "A" ? 1 : 2);
+
+                    //The label for the button is the name of the invitee or the bed number/letter.
+                    if (dtInvitation != null && dtInvitation.Rows.Count >= bedNumber)
+                    {
+                        btnBed.CssClass += " bedReserved";
+                        btnBed.Text = String.Format("{0} {1} invited", dtInvitation.Rows[bedNumber - 1]["FirstName"].ToString(), dtInvitation.Rows[bedNumber - 1]["LastName"].ToString());
+                    }
+
                     returnObj = btnBed;
                 }
                 else
                 {
-                    DataRow drBed = dtBed.Rows[bedNumber - 1];
-                    Literal ltlBed = new Literal();
-                    ltlBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
-                    returnObj = ltlBed;
+                    DataRow drBed = dtBed.Rows[bedNumber];
+                    Label lblBed = new Label();
+                    lblBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
+                    lblBed.CssClass = "bedOccupant";
+                    returnObj = lblBed;
                 }
             }
             catch (Exception ee)
             {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error querying residents of room:<br />{0}<br /><br />{1}", ee.Message, ee.InnerException));
+                Literal ltlEx = new Literal();
+                ltlEx.Text = String.Format("Error querying residents of room:<br />{0}<br /><br />{1}", ee.Message, ee.InnerException);
+                returnObj = ltlEx;
             }
             return returnObj;
         }

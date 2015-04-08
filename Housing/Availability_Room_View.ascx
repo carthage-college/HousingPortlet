@@ -6,9 +6,9 @@
 <asp:LinkButton ID="lnkPickBuilding" runat="server" Text="Pick A Different Building" OnClick="lnkPickBuilding_Click" />
 
 <h4><asp:Literal ID="ltlBuildingName" runat="server" Text="[FIX THIS]" /></h4>
-<asp:Repeater ID="rptRoomList" runat="server" OnItemCommand="rptRoomList_ItemCommand">
+<asp:Repeater ID="rptRoomList" runat="server">
     <HeaderTemplate>
-        <table cellpadding="3" cellspacing="0" border="0">
+        <table cellpadding="3" cellspacing="0" border="0" class="tableRoomAvailability">
     </HeaderTemplate>
     <ItemTemplate>
         <tr>

@@ -31,6 +31,24 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.Panel panelBuildings;
         
         /// <summary>
+        /// ltlBuildingPlural control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlBuildingPlural;
+        
+        /// <summary>
+        /// ltlBuildingPlural2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlBuildingPlural2;
+        
+        /// <summary>
         /// bulletedBuildings control.
         /// </summary>
         /// <remarks>

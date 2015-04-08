@@ -109,6 +109,7 @@
     <Content Include="Availability_Building_View.ascx" />
     <Content Include="Availability_Room_View.ascx" />
     <Content Include="Default_View.ascx" />
+    <Content Include="HousingStyles.css" />
     <Content Include="Send_Invitations_View.ascx" />
     <Content Include="SQL\Create_spHousingRegisterRoom.sql" />
     <Content Include="SQL\InitializeRoomSessionAndOccupant.sql" />

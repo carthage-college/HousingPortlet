@@ -22,12 +22,93 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.Literal ltlRoomSelected;
         
         /// <summary>
-        /// dlRoommates control.
+        /// ltlRoom control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::Jenzabar.Common.Web.UI.Controls.DataList dlRoommates;
+        protected global::System.Web.UI.WebControls.Literal ltlRoom;
+        
+        /// <summary>
+        /// repeaterRoommates control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repeaterRoommates;
+        
+        /// <summary>
+        /// panelStudentDetail control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelStudentDetail;
+        
+        /// <summary>
+        /// panelStudentOK control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelStudentOK;
+        
+        /// <summary>
+        /// ltlStudentName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlStudentName;
+        
+        /// <summary>
+        /// ltlStudentEmail control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlStudentEmail;
+        
+        /// <summary>
+        /// btnSendInvitation control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Button btnSendInvitation;
+        
+        /// <summary>
+        /// panelStudentNo control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelStudentNo;
+        
+        /// <summary>
+        /// ltlStudentEmail2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlStudentEmail2;
+        
+        /// <summary>
+        /// ltlReason control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlReason;
     }
 }

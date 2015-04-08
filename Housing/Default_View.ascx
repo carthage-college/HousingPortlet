@@ -42,10 +42,41 @@
         </li>
     </ul>
 
-    <!--- Invitations --->
+    <!-- Invitations -->
+    <asp:Panel ID="panelInvitations" runat="server">
+        You have been invited to select the following room(s):
+        <asp:Repeater ID="repeaterInvites" runat="server" OnItemDataBound="repeaterInvites_ItemDataBound">
+            <HeaderTemplate><ul></HeaderTemplate>
+            <ItemTemplate>
+                <li><asp:Button ID="btnRoomInvite" runat="server" /> (Invited by <asp:Literal ID="ltlInviteBy" runat="server" />)</li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+    </asp:Panel>
 
-    <common:Subheader ID="subhdrAvailability" runat="server" Text="Room Availability" />
-    <asp:LinkButton ID="lnkAvailability" runat="server" Text="View the rooms currently available." OnClick="lnkAvailability_Click" />
-    <asp:Literal ID="ltlCannotRegister" runat="server" Text="Please make sure that your balance is paid and that you are registered for classes." />
-    <asp:Literal ID="ltlInvalidTime" runat="server" Text="It is not your time to register. Check the housing <a href='overview.cfm'>overview page</a> for a complete breakdown of registration times." />
+    <!-- Extended Invitations -->
+    <asp:Panel ID="panelExtendedInvitations" runat="server">
+        You have extended the following invitation(s):
+        <asp:Repeater ID="repeaterExtendedInvites" runat="server" OnItemDataBound="repeaterExtendedInvites_ItemDataBound">
+            <HeaderTemplate><ul></HeaderTemplate>
+            <ItemTemplate>
+                <li>Invited <asp:Literal ID="ltlInvitedName" runat="server" /></li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+    </asp:Panel>
+
+    <asp:Panel ID="panelAvailability" runat="server">
+        <common:Subheader ID="subhdrAvailability" runat="server" Text="Room Availability" />
+        <asp:LinkButton ID="lnkAvailability" runat="server" Text="View the rooms currently available." OnClick="lnkAvailability_Click" />
+        <asp:Literal ID="ltlCannotRegister" runat="server" Text="Please make sure that your balance is paid and that you are registered for classes." />
+        <asp:Panel ID="panelOverview" runat="server">
+            <p>It is not your time to register. You may:</p>
+            <ul class="registrationOptions">
+                <li>Register for your current room <asp:Literal ID="ltlRegisterGreek" runat="server" Text="or a room affiliated with your greek organization" /> on <asp:Literal ID="ltlGreekSquatterDay" runat="server" />.</li>
+                <li>Register for any room starting at <asp:Literal ID="ltlFirstRegisterDateTime" runat="server" />.</li>
+            </ul>
+            <p>For a complete breakdown of registration days and times, please check the housing <a href="https://www.carthage.edu/housing/selection/overview.cfm" target="_blank">overview page</a>.</p>
+        </asp:Panel>
+    </asp:Panel>
 </asp:Panel>

@@ -7,8 +7,10 @@ using Jenzabar.Portal.Framework.Web.UI;
 
 namespace Housing
 {
-    public class HousingMain : PortletBase
+    public class HousingMain : PortletBase, ICssProvider
     {
+        public string CssClass { get { return "housingPortlet"; } }
+        public string CssFileLocation { get { return "~/Portlets/CUS/ICS/Portlet.Housing/HousingStyles.css"; } }
         
         protected override PortletViewBase GetCurrentScreen()
         {

@@ -1,6 +1,4 @@
 USE ICS_NET_TEST
---SELECT COUNT(*) FROM dbo.CUS_Housing_Building
---SELECT COUNT(*) FROM CUS_Housing_Room
 
 BEGIN TRANSACTION
 	DECLARE	@clearExistingData	BIT	=	1;
@@ -293,4 +291,226 @@ BEGIN TRANSACTION
 
 	DECLARE	@createdRooms	INT	=	(SELECT COUNT(*) FROM CUS_Housing_Room);
 	PRINT 'Created ' + CAST(@createdRooms AS VARCHAR) + ' rooms';
+
+	--IMPORTANT!!: All Greek default values came from 2014 housing data. Changes made via the administrative screens are not reflected in this SQL file.
+
+	--Beta Phi Epsilon (DEN: 300, 304, 306)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Beta Phi Epsilon')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+	AND
+		RoomNumber		IN	('300','304','306');
+
+	--Tau Kappa Epsilon (DEN: 349, 358, 359, 362, 368)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Tau Kappa Epsilon')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+	AND
+		RoomNumber		IN	('349','358','359','362','368');
+
+	--Chi Omega (DEN: 400, 401, 402, 403, 404, 405, 409, 410, 411, 412, 413, 414, 416, 418, 420)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Chi Omega')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+	AND
+		RoomNumber		IN	('400','401','402','403','404','405','409','410','411','412','413','414','416','418','420');
+
+	--Sigma Omega Sigma (JOH: 202, 206, 216)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Sigma Omega Sigma')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+	AND
+		RoomNumber		IN	('202','206','216');
+
+	--Delta Upsilon (JOH: 300,302,304,305,306,307,310,311,312,313,314,320,322)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Delta Upsilon')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+	AND
+		RoomNumber		IN	('300','302','304','305','306','307','310','311','312','313','314','320','322');
+
+	--Phi Kappa Sigma (JOH: 401,403,404,412,413,414,415,422)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Phi Kappa Sigma')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+	AND
+		RoomNumber		IN	('401','403','404','412','413','414','415','422');
+
+	--Alpha Chi Omega (JOH: 450,453,454,457,461,462,463,464,465,468)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Alpha Chi Omega')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+	AND
+		RoomNumber		IN	('450','453','454','457','461','462','463','464','465','468');
+
+	--Tau Sigma Chi (MADR: 128,130,132,134,136,138,139,141,142,144,145,146,147,149,165,167,168,169,170,172,176,178,180)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Tau Sigma Chi')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+	AND
+		RoomNumber		IN	('128','130','132','134','136','138','139','141','142','144','145','146','147','149','165','167','168','169','170','172','176','178','180');
+
+	--Tau Sigma Phi (MADR: 222,264,274)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Tau Sigma Phi')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+	AND
+		RoomNumber		IN	('222','264','274');
+
+	--Kappa Phi Eta (MADR: 328,334,336,337,339,341,349)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Kappa Phi Eta')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+	AND
+		RoomNumber		IN	('328','334','336','337','339','341','349');
+
+	--Delta Omega Nu (MADR: 422,481)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Delta Omega Nu')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+	AND
+		RoomNumber		IN	('422','481');
+
+	--Sigma Alpha Chi (TAR: 202,204)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Sigma Alpha Chi')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+	AND
+		RoomNumber		IN	('202','204');
+
+	--Pi Theta (TAR: 306,310,312,314,316,318,320)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Sigma Alpha Chi')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+	AND
+		RoomNumber		IN	('306','310','312','314','316','318','320');
+
+	--RA Rooms
+	UPDATE
+		CUS_Housing_Room
+	SET
+		IsRA	=	1
+	WHERE
+		--Apartments
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'APT')
+			AND
+			RoomNumber	IN	('001')
+		)
+		OR
+		--Denhart
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+			AND
+			RoomNumber	IN	('012','020','108','151','212','251','308','320','351','408','451')
+		)
+		OR
+		--Johnson
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+			AND
+			RoomNumber	IN	('008','110','158','208','258','308','351','358','410','460')
+		)
+		OR
+		--Madrigrano
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+			AND
+			RoomNumber	IN	('140','174','240','270','340','372','440','449','470')
+		)
+		OR
+		--Oaks 1
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK1')
+			AND
+			RoomNumber	IN	('211A','211B','403A','403B')
+		)
+		OR
+		--Oaks 2
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK2')
+			AND
+			RoomNumber	IN	('211A','211B','403A','403B')
+		)
+		OR
+		--Oaks 3
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK3')
+			AND
+			RoomNumber	IN	('211A','211B','403A','403B')
+		)
+		OR
+		--Oaks 4
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK4')
+			AND
+			RoomNumber	IN	('211A','211B','403A','403B')
+		)
+		OR
+		--Oaks 5
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK5')
+			AND
+			RoomNumber	IN	('211A','211B','403A','403B')
+		)
+		OR
+		--Oaks 6
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK6')
+			AND
+			RoomNumber	IN	('114','211A','211B','403A','403B')
+		)
+		OR
+		--Swenson
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'SWE')
+			AND
+			RoomNumber	IN	('015')
+		)
+		OR
+		--Tarble
+		(
+			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+			AND
+			RoomNumber	IN	('007','110','212','252','301','308','355','410')
+		)
 ROLLBACK
