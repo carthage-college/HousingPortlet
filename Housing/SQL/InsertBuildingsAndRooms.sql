@@ -1,5 +1,3 @@
-USE ICS_NET_TEST
-
 BEGIN TRANSACTION
 	DECLARE	@clearExistingData	BIT	=	1;
 
@@ -303,6 +301,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
 	AND
 		RoomNumber		IN	('300','304','306');
+	PRINT 'Updated Beta Phi Epsilon beds';
 
 	--Tau Kappa Epsilon (DEN: 349, 358, 359, 362, 368)
 	UPDATE
@@ -313,6 +312,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
 	AND
 		RoomNumber		IN	('349','358','359','362','368');
+	PRINT 'Updated Tau Kappa Epsilon beds';
 
 	--Chi Omega (DEN: 400, 401, 402, 403, 404, 405, 409, 410, 411, 412, 413, 414, 416, 418, 420)
 	UPDATE
@@ -323,6 +323,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
 	AND
 		RoomNumber		IN	('400','401','402','403','404','405','409','410','411','412','413','414','416','418','420');
+	PRINT 'Updated Chi Omega beds';
 
 	--Sigma Omega Sigma (JOH: 202, 206, 216)
 	UPDATE
@@ -333,6 +334,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
 	AND
 		RoomNumber		IN	('202','206','216');
+	PRINT 'Updated Sigma Omega Sigma beds';
 
 	--Delta Upsilon (JOH: 300,302,304,305,306,307,310,311,312,313,314,320,322)
 	UPDATE
@@ -343,6 +345,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
 	AND
 		RoomNumber		IN	('300','302','304','305','306','307','310','311','312','313','314','320','322');
+	PRINT 'Updated Delta Upsilon beds';
 
 	--Phi Kappa Sigma (JOH: 401,403,404,412,413,414,415,422)
 	UPDATE
@@ -353,6 +356,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
 	AND
 		RoomNumber		IN	('401','403','404','412','413','414','415','422');
+	PRINT 'Updated Phi Kappa Sigma beds';
 
 	--Alpha Chi Omega (JOH: 450,453,454,457,461,462,463,464,465,468)
 	UPDATE
@@ -363,6 +367,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
 	AND
 		RoomNumber		IN	('450','453','454','457','461','462','463','464','465','468');
+	PRINT 'Updated Alpha Chi Omega beds';
 
 	--Tau Sigma Chi (MADR: 128,130,132,134,136,138,139,141,142,144,145,146,147,149,165,167,168,169,170,172,176,178,180)
 	UPDATE
@@ -373,6 +378,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
 	AND
 		RoomNumber		IN	('128','130','132','134','136','138','139','141','142','144','145','146','147','149','165','167','168','169','170','172','176','178','180');
+	PRINT 'Updated Tau Sigma Chi beds';
 
 	--Tau Sigma Phi (MADR: 222,264,274)
 	UPDATE
@@ -383,6 +389,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
 	AND
 		RoomNumber		IN	('222','264','274');
+	PRINT 'Updated Tau Sigma Phi beds';
 
 	--Kappa Phi Eta (MADR: 328,334,336,337,339,341,349)
 	UPDATE
@@ -393,6 +400,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
 	AND
 		RoomNumber		IN	('328','334','336','337','339','341','349');
+	PRINT 'Updated Kappa Phi Eta beds';
 
 	--Delta Omega Nu (MADR: 422,481)
 	UPDATE
@@ -403,6 +411,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
 	AND
 		RoomNumber		IN	('422','481');
+	PRINT 'Updated Delta Omega Nu beds';
 
 	--Sigma Alpha Chi (TAR: 202,204)
 	UPDATE
@@ -413,6 +422,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
 	AND
 		RoomNumber		IN	('202','204');
+	PRINT 'Updated Sigma Alpha Chi beds';
 
 	--Pi Theta (TAR: 306,310,312,314,316,318,320)
 	UPDATE
@@ -423,6 +433,7 @@ BEGIN TRANSACTION
 		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
 	AND
 		RoomNumber		IN	('306','310','312','314','316','318','320');
+	PRINT 'Updated Pi Theta beds';
 
 	--RA Rooms
 	UPDATE
@@ -513,4 +524,5 @@ BEGIN TRANSACTION
 			AND
 			RoomNumber	IN	('007','110','212','252','301','308','355','410')
 		)
+	PRINT 'Updated RA beds';
 ROLLBACK

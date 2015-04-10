@@ -7,8 +7,9 @@
 <asp:Panel ID="panelRegistered" runat="server" CssClass="pSection">
     <p>You have registered for <asp:Literal ID="ltlRegisteredHousing" runat="server" Text="[FIX THIS]" />.</p>
     <p>Your registration was completed at <asp:Literal ID="ltlRegisteredDateTime" runat="server" Text="[FIX THIS]" />.</p>
-    <p>If you have not already purchased a parking permit, you may do so <a href="#">here</a>.</p>
-    <asp:BulletedList ID="bulletedRoommates" runat="server">
+    <p>If you have not already purchased a parking permit, you may do so <a href="http://www.carthage.edu/parking/">here</a>.</p>
+    <p>Occupants of your room:</p>
+    <asp:BulletedList ID="bulletedRoommates" runat="server" CssClass="roommateList">
     </asp:BulletedList>
 </asp:Panel>
 <asp:Panel ID="panelCommuter" runat="server" CssClass="pSection">

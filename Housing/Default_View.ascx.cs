@@ -180,7 +180,7 @@ namespace Housing
                     FU.FirstName, FU.LastName
                 FROM
                     CUS_Housing_RoomStudent HRStu   INNER JOIN  CUS_Housing_RoomSession HRS ON  HRStu.RoomSessionID =   HRS.RoomSessionID
-                                                    INNER JOIN  FWK_User                FU  ON  HRStu.StudentID     =   FU.UserID
+                                                    INNER JOIN  FWK_User                FU  ON  HRStu.StudentID     =   FU.ID
                 WHERE
                     HRStu.RoomSessionID =   ?
                 ORDER BY
@@ -518,32 +518,37 @@ namespace Housing
                         isValidTime = true;
                         break;
                     case 1:
-                        if (currentHour > 8 && careerCreditHours >= 126) { isValidTime = true; }
-                        else if (currentHour > 9 && careerCreditHours >= 118) { isValidTime = true; }
-                        else if (currentHour > 10 && careerCreditHours >= 106) { isValidTime = true; }
-                        else if (currentHour > 11 && careerCreditHours >= 98) { isValidTime = true; }
-                        else if (currentHour > 12 && careerCreditHours >= 92) { isValidTime = true; }
-                        else if (currentHour > 13 && careerCreditHours >= 85) { isValidTime = true; }
-                        else if (currentHour > 14 && careerCreditHours >= 74) { isValidTime = true; }
-                        else if (currentHour > 15 && careerCreditHours >= 66) { isValidTime = true; }
-                        else if (currentHour > 16 && careerCreditHours >= 61) { isValidTime = true; }
+                        if (currentHour >= 8 && careerCreditHours >= 126) { isValidTime = true; }
+                        else if (currentHour >= 9 && careerCreditHours >= 118) { isValidTime = true; }
+                        else if (currentHour >= 10 && careerCreditHours >= 106) { isValidTime = true; }
+                        else if (currentHour >= 11 && careerCreditHours >= 98) { isValidTime = true; }
+                        else if (currentHour >= 12 && careerCreditHours >= 92) { isValidTime = true; }
+                        else if (currentHour >= 13 && careerCreditHours >= 85) { isValidTime = true; }
+                        else if (currentHour >= 14 && careerCreditHours >= 74) { isValidTime = true; }
+                        else if (currentHour >= 15 && careerCreditHours >= 66) { isValidTime = true; }
+                        else if (currentHour >= 16 && careerCreditHours >= 61) { isValidTime = true; }
                         break;
                     case 2:
-                        if (currentHour > 8 && careerCreditHours >= 57) { isValidTime = true; }
-                        else if (currentHour > 9 && careerCreditHours >= 53) { isValidTime = true; }
-                        else if (currentHour > 10 && careerCreditHours >= 45) { isValidTime = true; }
-                        else if (currentHour > 11 && careerCreditHours >= 36) { isValidTime = true; }
-                        else if (currentHour > 12 && careerCreditHours >= 32) { isValidTime = true; }
-                        else if (currentHour > 13 && careerCreditHours >= 28) { isValidTime = true; }
-                        else if (currentHour > 14 && careerCreditHours >= 24) { isValidTime = true; }
-                        else if (currentHour > 15 && careerCreditHours >= 21) { isValidTime = true; }
+                        //Anyone from the previous day may sign up at any time on this day
+                        if (careerCreditHours >= 61) { isValidTime = true; }
+                        else if (currentHour >= 8 && careerCreditHours >= 57) { isValidTime = true; }
+                        else if (currentHour >= 9 && careerCreditHours >= 53) { isValidTime = true; }
+                        else if (currentHour >= 10 && careerCreditHours >= 45) { isValidTime = true; }
+                        else if (currentHour >= 11 && careerCreditHours >= 36) { isValidTime = true; }
+                        else if (currentHour >= 12 && careerCreditHours >= 32) { isValidTime = true; }
+                        else if (currentHour >= 13 && careerCreditHours >= 28) { isValidTime = true; }
+                        else if (currentHour >= 14 && careerCreditHours >= 24) { isValidTime = true; }
+                        else if (currentHour >= 15 && careerCreditHours >= 21) { isValidTime = true; }
                         break;
                     case 3:
-                        if (currentHour > 15) { message = ExpiredMessage; isValidTime = false; }
-                        else if (currentHour > 8 && careerCreditHours >= 20) { isValidTime = true; }
-                        else if (currentHour > 9 && careerCreditHours >= 17) { isValidTime = true; }
-                        else if (currentHour > 10 && careerCreditHours >= 12) { isValidTime = true; }
-                        else if (currentHour > 11 && careerCreditHours >= 0) { isValidTime = true; }
+                        //The housing signup period ends at 2 p.m. but we build in a one hour grace period
+                        if (currentHour >= 15) { message = ExpiredMessage; isValidTime = false; }
+                        //Anyone from the previous day may sign up at any time before the close of housing on this day
+                        else if (currentHour >= 0 && careerCreditHours >= 21) { isValidTime = true; }
+                        else if (currentHour >= 8 && careerCreditHours >= 20) { isValidTime = true; }
+                        else if (currentHour >= 9 && careerCreditHours >= 17) { isValidTime = true; }
+                        else if (currentHour >= 10 && careerCreditHours >= 12) { isValidTime = true; }
+                        else if (currentHour >= 11 && careerCreditHours >= 0) { isValidTime = true; }
                         break;
                     default:
                         message = ExpiredMessage;

@@ -1,0 +1,35 @@
+﻿ul.roommateList li {
+    list-style-type:disc;
+    margin-left:40px;
+}
+
+ul.registrationOptions li {
+    margin-left:45px;
+    list-style-type:disc;
+}
+
+.bedOccupant {
+    display:block;
+    float:left;
+    margin-right:15px;
+}
+
+span.bedOccupant {
+    width:200px;
+}
+
+input.bedOccupant {
+    width:80px;
+}
+
+input.bedReserved {
+    width:200px;
+}
+
+table.tableRoomAvailability > tbody > tr {
+    height:33px;
+}
+
+table.tableRoomAvailability > tbody > tr > td:first-child {
+    padding-right:10px;
+}
