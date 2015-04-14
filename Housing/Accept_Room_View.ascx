@@ -49,9 +49,9 @@ each term. The only exception to this is J-Term. The campus does not close betwe
 end of J-Term and the beginning of Term II. The campus will be closed for the following 
 breaks:
 
-    Thanksgiving November 21 after 6:00 p.m. through November 30, <asp:Literal ID="ltlThisYear1" runat="server" /> at noon
-    Christmas December 12, <asp:Literal ID="ltlThisYear2" runat="server" /> after 6:00 p.m. through January 5, <asp:Literal ID="ltlNextYear1" runat="server" /> at noon
-    Spring Break March 20, after 6:00 p.m. through March 29, <asp:Literal ID="ltlNextYear2" runat="server" /> at noon
+    Thanksgiving November 20 after 6:00 p.m. through November 29, <asp:Literal ID="ltlThisYear1" runat="server" /> at noon
+    Christmas December 18, <asp:Literal ID="ltlThisYear2" runat="server" /> after 6:00 p.m. through January 4, <asp:Literal ID="ltlNextYear1" runat="server" /> at noon
+    Spring Break March 18, after 6:00 p.m. through March 27, <asp:Literal ID="ltlNextYear2" runat="server" /> at noon
 
 The student shall remove all personal possessions from their assigned space upon 
 termination of residence for any reason. All such personal possessions not removed will 

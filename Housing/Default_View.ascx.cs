@@ -32,7 +32,15 @@ namespace Housing
         public string CurrentYear { get { return DateTime.Now.Year.ToString(); } }
         public string NextYear { get { return (int.Parse(CurrentYear) + 1).ToString(); } }
         public string BeginInvolvement { get { return "1/1/" + (int.Parse(CurrentYear) - 3).ToString(); } }
-        public int UserID { get { return int.Parse(PortalUser.Current.HostID); } }
+        public int UserID
+        {
+            get
+            {
+                int userID = 0;
+                int.TryParse(PortalUser.Current.HostID, out userID);
+                return userID;
+            }
+        }
         public int DayIndex;
         public bool IsTodayRA;
         #endregion
@@ -62,11 +70,14 @@ namespace Housing
 
             //If the DataRow object is null, the student has not yet signed up for a room
             bool isRegisteredForHousing = drUpcomingHousing != null;
-            
+
             //If the student hasn't signed up for housing, retrieve and display the invitations extended to them
             if (!isRegisteredForHousing)
             {
-                DataTable dtInvitations = GetInvitations(drCxData["sex"].ToString());
+                if (drCxData != null)
+                {
+                    DataTable dtInvitations = GetInvitations(drCxData["sex"].ToString());
+                }
             }
             //If the student has signed up for housing, display their roommates
             else
@@ -74,6 +85,7 @@ namespace Housing
                 this.panelInvitations.Visible = false;
                 GetRoommates(drUpcomingHousing["RoomSessionID"].ToString());
             }
+
             GetExtendedInvitations();
 
             //If the query returned results, load the data into the controls on the page
@@ -134,9 +146,9 @@ namespace Housing
                 string message = "";
                 bool isValidTime = IsValidTimeToRegister(DayIndex, int.Parse(drCxData["career_hours"].ToString()), out message);
 
-                bool mayRegister = true;
+                //bool mayRegister = true;
                 bool hasDefinedGender = this.ParentPortlet.PortletViewState["Gender"].ToString() != "";
-                //bool mayRegister = isFallRegistered && !isCommuter && !hasHold && hasDefinedGender;
+                bool mayRegister = isFallRegistered && !isCommuter && !hasHold && hasDefinedGender;
 
                 this.panelAvailability.Visible = !isRegisteredForHousing;
                 this.lnkAvailability.Visible = isValidTime && mayRegister;
@@ -153,10 +165,14 @@ namespace Housing
             }
             else if (dtStudentData != null && dtStudentData.Rows.Count == 0)
             {
+                this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
+                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = false;
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, "No records were found that matched your ID.");
             }
             else
             {
+                this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
+                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = false;
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, "We were unable to retrieve your information. Please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a> to resolve this issue.");
             }
         }
@@ -401,6 +417,10 @@ namespace Housing
                 if (exExtendedInvite != null) { throw exExtendedInvite; }
                 this.repeaterExtendedInvites.DataSource = dtExtendedInvite;
                 this.repeaterExtendedInvites.DataBind();
+                if (dtExtendedInvite == null || dtExtendedInvite.Rows.Count == 0)
+                {
+                    this.panelExtendedInvitations.Visible = false;
+                }
             }
             catch (Exception ex)
             {
@@ -610,6 +630,7 @@ namespace Housing
         {
             if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
             {
+                //As the row is bound to the item, cast the item as a DataRow object so the values may be accessed
                 DataRow invitation = (e.Item.DataItem as DataRowView).Row;
 
                 Literal ltlInviteName = e.Item.FindControl("ltlInvitedName") as Literal;

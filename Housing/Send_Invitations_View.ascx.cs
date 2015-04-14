@@ -263,13 +263,13 @@ namespace Housing
 
                     string emailBody = String.Format(@"
                         <p>{0},</p>
-				        <p>A roommate request has been created for you in {1}. When it is your time to register for a room, you will see a button on your profile
-                        page once you've logged into the housing sign-up application to accept this roommate invitation.</p>
+				        <p>A roommate request has been created for you in {1}. When it is your credit hour time to register for a room, you will see a button on your profile page once
+                        you've logged into the housing sign-up application to accept this roommate invitation.</p>
 				        <p>You must log in and select a bed before 2pm on {2:MMMM d, yyyy} to secure housing. This roommate invitation does not secure your housing for the {3}
                         academic year. You must log in and either accept the invitation or sign up for a different room to secure housing for the {4} academic year.</p>
 				        <p>Please contact Nina Fleming, Assistant Dean of Students at <a mailto='nfleming@carthage.edu'>nfleming@carthage.edu</a> or in the Office of
                         Student Life if you have any questions about this invitation.</p>
-				        <p><a href='https://www.carthage.edu/housing/selection/'>https://www.carthage.edu/housing/selection/</a></p>
+				        <p><a href='https://www.carthage.edu/housing/'>https://www.carthage.edu/housing/</a></p>
                     ", drEmail["FirstName"].ToString(), drEmail["RoomLocation"].ToString(), drEmail["EndDate"].ToString(), drEmail["HousingYear"].ToString(), drEmail["HousingYear"].ToString());
 
                     PortalUser recipient = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(drEmail["Email"].ToString());
