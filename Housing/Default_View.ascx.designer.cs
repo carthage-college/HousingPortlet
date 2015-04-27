@@ -22,6 +22,15 @@ namespace Housing {
         protected global::Jenzabar.Common.Web.UI.Controls.ErrorDisplay errMsg;
         
         /// <summary>
+        /// welcome control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.HtmlControls.HtmlGenericControl welcome;
+        
+        /// <summary>
         /// ltlStudentName control.
         /// </summary>
         /// <remarks>

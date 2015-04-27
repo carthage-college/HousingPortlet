@@ -159,7 +159,7 @@ namespace Housing
                         string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
                         PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
                         smtpAddress = Email.GetProperEMailAddress(emailSender.EmailAddress);
-                        string emailTo = "mkishline@carthage.edu", emailSubject = "Room Registration";
+                        string emailTo = PortalUser.Current.EmailAddress, emailSubject = "Room Registration";
 
                         List<OdbcParameter> parameters = new List<OdbcParameter>
                         {
@@ -181,7 +181,6 @@ namespace Housing
                             , PortalUser.Current.FirstName, formattedRoom, AcademicYear, AcademicYear
                             );
 
-                            //TODO: Change emailTo to PortalUser.Current.EmailAddress
                             bool emailSuccess = !String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(smtpAddress, emailTo, emailSubject, emailBody);
                             //If the system is configured to log sent emails and the email was sent successfully create a record of it in the database 
                             if (ConfigSettings.Current.LogEmail && emailSuccess)

@@ -88,8 +88,10 @@ namespace Housing
 
             GetExtendedInvitations();
 
+            bool isCommuter = studentIsCommuter(drCxData);
+
             //If the query returned results, load the data into the controls on the page
-            if (drCxData != null)
+            if (drCxData != null && drCxData["include"].ToString().Trim() != "GPS")
             {
                 this.ltlStudentName.Text = String.Format("{0} {1}", drCxData["firstname"].ToString(), drCxData["lastname"].ToString());
 
@@ -108,9 +110,10 @@ namespace Housing
                 //A student must be registered for 12 or more credits in the upcoming semester
                 this.ltlRegistered.Text = isFallRegistered ? "" : "not";
                 
-                //this.contentRegisteredDetail.Visible = this.ltlRegistered.Text.Length > 0;
+                //If the student has not registered for the fall, display an explanation
+                this.contentRegisteredDetail.Visible = !isFallRegistered;
                 
-                this.ltlRegisteredYear.Text = String.Format("{0} - {1}", CurrentYear, NextYear);
+                this.ltlRegisteredYear.Text = String.Format("{0}", CurrentYear);
                 //Determine the proper display of student's gender
                 switch (drCxData["sex"].ToString())
                 {
@@ -131,10 +134,9 @@ namespace Housing
                 this.ltlCareerCredits.Text = drCxData["career_hours"].ToString();
 
                 //Show the building and room number the student currently occupies
-                bool isCommuter = drCxData["bldg"].ToString().Trim() == "Commuter" || drCxData["bldg"].ToString().Trim().ToUpper() == "CMTR";
                 this.ltlCurrentHousing.Text = String.Format("{0} {1}", drCxData["bldg"].ToString(), drCxData["room"].ToString());
                 this.panelCommuter.Visible = this.ltlNotResident.Visible = isCommuter;
-                this.panelCurrentHousing.Visible = !isCommuter;
+                this.panelCurrentHousing.Visible = this.panelUnregistered.Visible = !isCommuter;
 
                 //Get the start dates for RAs and the general student population
                 DateTime? raStartDate = null, generalStartDate = null;
@@ -144,10 +146,15 @@ namespace Housing
                 IsTodayRA = DateDiff(raStartDate.Value) == 0;
 
                 string message = "";
-                bool isValidTime = IsValidTimeToRegister(DayIndex, int.Parse(drCxData["career_hours"].ToString()), out message);
+                bool isStudentRA = studentIsRA();
+                bool isValidTime = (isStudentRA && IsTodayRA) || IsValidTimeToRegister(DayIndex, int.Parse(drCxData["career_hours"].ToString()), out message);
 
-                //bool mayRegister = true;
                 bool hasDefinedGender = this.ParentPortlet.PortletViewState["Gender"].ToString() != "";
+                //A student must meet the following criteria to register:
+                //  1. Must be registered for >= 12 credits in the fall term
+                //  2. May not currently be a commuter
+                //  3. Has no holds on their account
+                //  4. Has a defined gender listed in CX (must be "M" or "F")
                 bool mayRegister = isFallRegistered && !isCommuter && !hasHold && hasDefinedGender;
 
                 this.panelAvailability.Visible = !isRegisteredForHousing;
@@ -163,18 +170,55 @@ namespace Housing
                     this.ltlFirstRegisterDateTime.Text = String.Format("{0:h:mm tt} on {1:dddd, MMMM d}", firstRegister, firstRegister);
                 }
             }
+            else
+            {
+                //Suppress the display of all the various responsive components of the page
+                this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
+                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
+                
+                //Initialize message to be displayed
+                string noSignupMessage = "";
+
+                //Is the student in one of the GPS programs?
+                bool isGPS = drCxData != null && drCxData["include"].ToString().Trim() == "GPS";
+                
+                //GPS students receive a message, other scenarios display as an error
+                FeedbackType fbType = isGPS ? FeedbackType.Message : FeedbackType.Error;
+
+                if (isGPS)
+                {
+                    noSignupMessage = "This portlet is only needed by undergraduate residents. If you require housing, please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a>.";
+                }
+                else if (dtStudentData != null && dtStudentData.Rows.Count == 0)
+                {
+                    noSignupMessage = "No records were found that matched your ID.";
+                }
+                else
+                {
+                    noSignupMessage = "We were unable to retrieve your information. Please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a> to resolve this issue.";
+                }
+                this.ParentPortlet.ShowFeedback(fbType, noSignupMessage);
+            }
+            /*
+            else if (drCxData != null && drCxData["include"].ToString().Trim() == "GPS")
+            {
+                this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
+                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
+                this.ParentPortlet.ShowFeedback(FeedbackType.Message, "This portlet is only needed by undergraduate residents. If you require housing, please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a>.");
+            }
             else if (dtStudentData != null && dtStudentData.Rows.Count == 0)
             {
                 this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
-                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = false;
+                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, "No records were found that matched your ID.");
             }
             else
             {
                 this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
-                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = false;
+                    this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, "We were unable to retrieve your information. Please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a> to resolve this issue.");
             }
+            */
         }
 
         protected void lnkAvailability_Click(object sender, EventArgs e)
@@ -231,9 +275,14 @@ namespace Housing
         {
             string studentSQL = String.Format(@"
                     SELECT
-                        id_rec.id, TRIM(id_rec.firstname) AS firstname, TRIM(id_rec.lastname) AS lastname, profile_rec.sex, NVL(stu_stat_rec.cum_earn_hrs, 0) AS career_hours, TRIM(NVL(curbldg.txt,'')) AS bldg,
+                        id_rec.id, TRIM(id_rec.firstname) AS firstname, TRIM(id_rec.lastname) AS lastname, profile_rec.sex, ROUND(NVL(stu_stat_rec.cum_earn_hrs, 0)) AS career_hours, TRIM(NVL(curbldg.txt,'')) AS bldg,
                         TRIM(NVL(stu_serv_rec.room,'')) AS room, NVL(stu_acad_rec.reg_hrs, 0) AS registered_hours, NVL(ADVpay.hld,'') AS advpayhold, NVL(UNBal.hld,'') AS unbal_hold,
-                        NVL(invl_rec.invl,'') AS greekid, TRIM(NVL(invl_rec.org,'')) AS greek_name
+                        NVL(invl_rec.invl,'') AS greekid, TRIM(NVL(invl_rec.org,'')) AS greek_name,
+                        CASE	sprAcad.subprog
+    	                    WHEN	'TRAD'	THEN	'UNDG'
+    	                    WHEN	'TRAP'	THEN	'UNDG'
+    					                    ELSE	'GPS'
+                        END	AS	include
                     FROM id_rec	INNER JOIN	profile_rec			        ON	id_rec.id			=	profile_rec.id
                                 LEFT JOIN	stu_stat_rec		        ON	id_rec.id			=	stu_stat_rec.id
                                 LEFT JOIN	stu_serv_rec		        ON	id_rec.id			=	stu_serv_rec.id
@@ -242,7 +291,10 @@ namespace Housing
                                 LEFT JOIN   bldg_table      curbldg     ON  stu_serv_rec.bldg   =   curbldg.bldg
 			                    LEFT JOIN	stu_acad_rec		        ON	id_rec.id			=	stu_acad_rec.id
 											                            AND	stu_acad_rec.sess	=	?
-											                            AND	stu_acad_rec.yr		=	stu_serv_rec.yr
+											                            AND	stu_acad_rec.yr		=	{1}
+								LEFT JOIN	stu_acad_rec	sprAcad		ON	id_rec.id			=	sprAcad.id
+																		AND	sprAcad.sess		=	?
+																		AND	sprAcad.yr			=	{2}
 			                    LEFT JOIN	hold_rec	    ADVpay	    ON	id_rec.id			=	ADVpay.id
 											                            AND	TODAY			BETWEEN	ADVpay.beg_date	AND	NVL(ADVpay.end_date, TODAY)
 											                            AND	ADVpay.hld			=	'APAY'
@@ -250,15 +302,16 @@ namespace Housing
 											                            AND	TODAY			BETWEEN	UNBal.beg_date	AND	NVL(UNBal.end_date, TODAY)
 											                            AND	UNBal.hld			=	'UBAL'
                                 LEFT JOIN   involve_rec     invl_rec    ON  id_rec.id           =   invl_rec.id
-                                                                        AND NVL(invl_rec.invl,'')    IN  ('','S007','S025','S045','S061','S063','S092','S141','S152','S165','S168','S189','S190','S192','S194')
+                                                                        AND NVL(invl_rec.invl,'')    IN  ('','S007','S025','S045','S061','S063','S092','S141','S152','S165','S168','S189','S190','S192','S194','S276','S277')
                                                                         AND NVL(invl_rec.end_date, TODAY)   >=  TODAY
-                    WHERE id_rec.id	=	{1}
-                ", CurrentYear, UserID.ToString());
+                    WHERE id_rec.id	=	{3}
+                ", CurrentYear, CurrentYear, CurrentYear, UserID.ToString());
 
             List<OdbcParameter> parameters = new List<OdbcParameter>
             {
                   new OdbcParameter("SpringSess", SESSION_SPRING)
                 , new OdbcParameter("FallSess", SESSION_FALL)
+                , new OdbcParameter("SpringSess2", SESSION_SPRING)
             };
 
             Exception exCxData = null;
@@ -360,7 +413,7 @@ namespace Housing
             DataTable dtInvitation = null;
             List<OdbcParameter> invitationParams = new List<OdbcParameter>
             {
-                  new OdbcParameter("StudentID", PortalUser.Current.Guid)
+                  new OdbcParameter("StudentID", PortalUser.Current.Guid.ToString())
                 , new OdbcParameter("StudentGender", studentGender)
             };
             try
@@ -408,7 +461,7 @@ namespace Housing
             DataTable dtExtendedInvite = null;
             List<OdbcParameter> extendedInviteParams = new List<OdbcParameter>
             {
-                new OdbcParameter("StudentID", PortalUser.Current.Guid)
+                new OdbcParameter("StudentID", PortalUser.Current.Guid.ToString())
             };
 
             try
@@ -448,7 +501,7 @@ namespace Housing
             DataRow drUpcomingHousing = null;
             List<OdbcParameter> upcomingHousingParams = new List<OdbcParameter>
             {
-                new OdbcParameter("StudentID", PortalUser.Current.Guid)
+                new OdbcParameter("StudentID", PortalUser.Current.Guid.ToString())
             };
 
             try
@@ -652,6 +705,36 @@ namespace Housing
 
             //Calculate the difference, in days, between the two dates
             return int.Parse((compareDate.Value - variableDate).TotalDays.ToString());
+        }
+
+        private bool studentIsCommuter(DataRow cxData)
+        {
+            bool returnVal = false;
+            if (cxData != null)
+            {
+                string cxBldg = cxData["bldg"].ToString().Trim().ToUpper();
+                return cxBldg == "CMTR" || cxBldg == "COMMUTER";
+            }
+            return returnVal;
+        }
+
+        private bool studentIsRA()
+        {
+            int[] arrayRA = {
+                                1313163,1245108,1362954,1382806,1334627,1381978,1253677,1392260,1360349,1396160,
+                                1326209,853586,1348991,1335444,1392091,1338427,1377417,1389396,1349912,1316931,
+                                1359544,1393681,1356926,1390994,1339127,1333211,1380321,1372750,1338766,1336157,
+                                1380442,1302343,1321415,1385261,1328382,1325094,1397143,1320805,1348908,1353112,
+                                1366791,1369894,1255003,1363112,798485,1352443,1388740,1343203,1299902,1367698,
+                                1366533,1359411,1358662,833023,1379393,1384058,1314645,1378875,1315014,1305909,
+                                1328822,1207964,1286565,1292888
+                            };
+            return arrayRA.Contains(UserID);
+        }
+
+        private void UpdateLogin()
+        {
+
         }
     }
 }

@@ -274,8 +274,7 @@ namespace Housing
 
                     PortalUser recipient = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(drEmail["Email"].ToString());
 
-                    //TODO: Change emailTo address to the intended invitee
-                    string emailTo = "mkishline@carthage.edu"; //recipient.EmailAddress;
+                    string emailTo = recipient.EmailAddress;
                     string emailSubject = "Housing Roommate Invitation";
 
                     string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;

@@ -85,6 +85,28 @@ namespace Housing
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException.ToString()));
             }
 
+            //Params: [0] = BuildingID, [1] = Gender
+            string raRoomSQL = @"
+                SELECT
+                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity, COUNT(HRStu.RoomStudentID) AS Occupancy
+                FROM
+                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	HB		ON  HR.BuildingID		=   HB.BuildingID
+								            INNER JOIN	CUS_Housing_RoomSession	HRS		ON	HR.RoomID			=	HRS.RoomID
+																						AND	HRS.HousingYear		=	YEAR(GETDATE())
+											LEFT JOIN	CUS_Housing_RoomStudent	HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
+                WHERE
+                    HR.BuildingID	=   ?
+		            AND
+		            HRS.Gender		IN	(?,'')
+                    AND
+                    HR.Capacity     >   0
+                    AND
+                    HR.IsRA         =   1
+                GROUP BY
+					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
+                ORDER BY
+		            HR.RoomNumber";
+
             // Params: [0] = GreekID (invl_table.invl), [1] = Gender, [2] = StudentID
             string greekSquatterSQL = String.Format(@"
                 SELECT
@@ -200,6 +222,7 @@ namespace Housing
             ex = null;
             DataTable dtRooms = null;
 
+            bool isTodayRA = bool.Parse(this.ParentPortlet.PortletViewState["IsTodayRA"].ToString());
             int dayIndex = int.Parse(this.ParentPortlet.PortletViewState["DayIndex"].ToString());
             string roomSQL = dayIndex == 0 ? greekSquatterSQL : (IsOaks ? oaksRoomSQL : standardRoomSQL);
 
@@ -209,8 +232,9 @@ namespace Housing
                 roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
                 roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
             }
-            else if(dayIndex > 0 && dayIndex < 4)
+            else if(isTodayRA || (dayIndex > 0 && dayIndex < 4))
             {
+                if (isTodayRA) { roomSQL = raRoomSQL; }
                 roomParameters.Add(new OdbcParameter("RoomBuildingID", buildingID));
                 roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
             }
@@ -357,6 +381,8 @@ namespace Housing
             DataTable dtBed = null;
             int bedNumber = -1;
             bool bedIsNumber = int.TryParse(BedIndex, out bedNumber);
+            //Make adjustments to bed number when dealing with Oaks' suites
+            bedNumber = bedIsNumber ? bedNumber : (BedIndex == "A" ? 1 : 2);
 
             try
             {
@@ -375,8 +401,6 @@ namespace Housing
                     btnBed.CssClass = "bedOccupant";
                     btnBed.Text = String.Format("Bed {0}", BedIndex);
 
-                    bedNumber = bedIsNumber ? bedNumber : (BedIndex == "A" ? 1 : 2);
-
                     //The label for the button is the name of the invitee or the bed number/letter.
                     if (dtInvitation != null && dtInvitation.Rows.Count >= bedNumber)
                     {
@@ -388,17 +412,17 @@ namespace Housing
                 }
                 else
                 {
-                    DataRow drBed = dtBed.Rows[bedNumber];
+                    DataRow drBed = dtBed.Rows[bedNumber - 1];
                     Label lblBed = new Label();
                     lblBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
                     lblBed.CssClass = "bedOccupant";
                     returnObj = lblBed;
                 }
             }
-            catch (Exception ee)
+            catch (Exception ex)
             {
                 Literal ltlEx = new Literal();
-                ltlEx.Text = String.Format("Error querying residents of room:<br />{0}<br /><br />{1}", ee.Message, ee.InnerException);
+                ltlEx.Text = String.Format("Error querying residents of room:<br />{0}<br /><br />{1}<br ><br />{2}", ex.Message, ex.StackTrace, RoomSessionID);
                 returnObj = ltlEx;
             }
             return returnObj;

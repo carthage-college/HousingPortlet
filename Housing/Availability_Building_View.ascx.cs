@@ -32,6 +32,24 @@ namespace Housing
 
             try
             {
+                //Get RA rooms that are available based on the student's gender
+                string raSQL = @"
+                    SELECT
+		                HB.BuildingID, HB.BuildingName, HB.BuildingCode
+	                FROM
+		                CUS_Housing_Building	HB	INNER JOIN	CUS_Housing_Room		HR	ON	HB.BuildingID	=	HR.BuildingID
+									                INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
+	                WHERE
+		                HRS.Gender		IN	('', ?)
+					AND
+						HR.IsRA			=	1
+	                GROUP BY
+		                HB.BuildingID, HB.BuildingName, HB.BuildingCode
+	                ORDER BY
+		                HB.BuildingName
+                ";
+
+                //Get buildings that have available rooms based on the the student's greek affiliations or current room assignment
                 string greekSquatterSQL = String.Format(@"
                     /* Select the greek rooms that correspond to the student's greek affiliation */
                     SELECT
@@ -89,7 +107,11 @@ namespace Housing
                     new OdbcParameter("StudentGender", this.ParentPortlet.PortletViewState["Gender"].ToString())
                 };
 
-                if (this.ParentPortlet.PortletViewState["DayIndex"].ToString() == "0")
+                if (bool.Parse(this.ParentPortlet.PortletViewState["IsTodayRA"].ToString()))
+                {
+                    buildingSQL = raSQL;
+                }
+                else if (this.ParentPortlet.PortletViewState["DayIndex"].ToString() == "0")
                 {
                     buildingSQL = greekSquatterSQL;
                     parameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));

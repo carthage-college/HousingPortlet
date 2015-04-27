@@ -3,7 +3,7 @@
 <div class="pSection">
     <common:ErrorDisplay ID="errMsg" runat="server" />
 </div>
-<h4>Welcome, <asp:Literal ID="ltlStudentName" runat="server" Text="[FIX THIS]" /></h4>
+<h4 id="welcome" runat="server">Welcome, <asp:Literal ID="ltlStudentName" runat="server" Text="[FIX THIS]" /></h4>
 <asp:Panel ID="panelRegistered" runat="server" CssClass="pSection">
     <p>You have registered for <asp:Literal ID="ltlRegisteredHousing" runat="server" Text="[FIX THIS]" />.</p>
     <p>Your registration was completed at <asp:Literal ID="ltlRegisteredDateTime" runat="server" Text="[FIX THIS]" />.</p>
@@ -29,8 +29,8 @@
         <li>
             You have <asp:Literal ID="ltlRegistered" runat="server" Text="[FIX THIS]" /> registered for classes in the fall.
             <common:ContentBox ID="contentRegisteredDetail" runat="server">
-                <strong>You are unable to sign up for housing because you are not registered as a full-time student for the <asp:Literal ID="ltlRegisteredYear" runat="server" Text="[FIX THIS]" />
-                academic year. Contact the Registrar's office at 262-551-6100 for additional information.</strong>
+                <strong>You are unable to sign up for housing because you are not registered for classes in the <asp:Literal ID="ltlRegisteredYear" runat="server" Text="[FIX THIS]" />
+                Fall term. Contact the Registrar's office at 262-551-6100 for additional information.</strong>
             </common:ContentBox>
         </li>
         <li><asp:Literal ID="ltlGender" runat="server" Text="[FIX THIS]" />.</li>

@@ -435,6 +435,32 @@ BEGIN TRANSACTION
 		RoomNumber		IN	('306','310','312','314','316','318','320');
 	PRINT 'Updated Pi Theta beds';
 
+	--Delta Omega Epsilon (Tarble 1 Long)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Delta Omega Epsilon')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+	AND
+		[Floor]			=	'1'
+	AND
+		Wing			=	'L'
+	PRINT 'Updated Delta Omega Epsilon beds';
+
+	--Zeta Tau Sigma (Denhart 2B)
+	UPDATE
+		CUS_Housing_Room
+	SET
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Zeta Tau Sigma')
+	WHERE
+		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+	AND
+		[Floor]			=	'2'
+	AND
+		Wing			=	'B'
+	PRINT 'Updated Zeta Tau Sigma beds';
+
 	--RA Rooms
 	UPDATE
 		CUS_Housing_Room
