@@ -50,8 +50,45 @@ namespace Housing
                 ";
 
                 //Get buildings that have available rooms based on the the student's greek affiliations or current room assignment
+//                string greekSquatterSQL = String.Format(@"
+//                    /* Select the greek rooms that correspond to the student's greek affiliation */
+//                    SELECT
+//	                    GreekBuildings.BuildingID, GreekBuildings.BuildingName, GreekBuildings.BuildingCode
+//                    FROM
+//	                    (
+//		                    SELECT
+//                                HB.BuildingID, HB.BuildingName, HB.BuildingCode
+//		                    FROM
+//			                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB      ON  HR.BuildingID	    =   HB.BuildingID
+//									                    INNER JOIN	CUS_Housing_RoomSession     HRS     ON  HR.RoomID           =	HRS.RoomID
+//                                                                                                        AND	HRS.HousingYear 	=	YEAR(GETDATE())
+//									                    LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=   HRStu.RoomSessionID
+//									                    LEFT JOIN	CUS_HousingSelectionGreek	HSG	    ON	HRS.GreekID         =	HSG.greekid
+//                            WHERE
+//                                HRS.Gender	IN	(?,'')
+//                            AND
+//                                HSG.invl    =   ?
+//		                    GROUP BY
+//                                HB.BuildingID, HB.BuildingName, HB.BuildingCode
+//	                    )	AS  GreekBuildings
+//                    UNION
+//                    /* Select the student's current room */
+//                    SELECT
+//                        HB.BuildingID, HB.BuildingName, HB.BuildingCode
+//                    FROM
+//	                    CUS_Housing_Room	HR  INNER JOIN  CUS_Housing_Building	    HB	    ON  HR.BuildingID	    =   HB.BuildingID
+//							                    INNER JOIN	CUS_Housing_RoomSession	    HRS	    ON	HR.RoomID	        =	HRS.RoomID
+//                                                                                                AND HRS.HousingYear     =	YEAR(GETDATE())
+//							                    INNER JOIN  CUS_Housing_SessionOccupant HSO     ON  HRS.RoomSessionID   =   HSO.RoomSessionID
+//							                    LEFT JOIN   CUS_Housing_RoomStudent     HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
+//							                    INNER JOIN	FWK_User	                FU	    ON  HSO.StudentID	    =	FU.ID
+//                    WHERE
+//                        FU.HostID = {0}
+//                    ORDER BY
+//                        BuildingName
+//                ", PortalUser.Current.HostID);
+
                 string greekSquatterSQL = String.Format(@"
-                    /* Select the greek rooms that correspond to the student's greek affiliation */
                     SELECT
 	                    GreekBuildings.BuildingID, GreekBuildings.BuildingName, GreekBuildings.BuildingCode
                     FROM
@@ -65,9 +102,9 @@ namespace Housing
 									                    LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=   HRStu.RoomSessionID
 									                    LEFT JOIN	CUS_HousingSelectionGreek	HSG	    ON	HRS.GreekID         =	HSG.greekid
                             WHERE
-                                HRS.Gender	IN	(?,'')
+                                HRS.Gender	IN	('{0}','')
                             AND
-                                HSG.invl    =   ?
+                                HSG.invl    =   '{1}'
 		                    GROUP BY
                                 HB.BuildingID, HB.BuildingName, HB.BuildingCode
 	                    )	AS  GreekBuildings
@@ -83,10 +120,10 @@ namespace Housing
 							                    LEFT JOIN   CUS_Housing_RoomStudent     HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
 							                    INNER JOIN	FWK_User	                FU	    ON  HSO.StudentID	    =	FU.ID
                     WHERE
-                        FU.HostID = {0}
+                        FU.HostID = {2}
                     ORDER BY
                         BuildingName
-                ", PortalUser.Current.HostID);
+                ", this.ParentPortlet.PortletViewState["Gender"].ToString(), this.ParentPortlet.PortletViewState["GreekID"].ToString(), PortalUser.Current.HostID);
 
                 //Get the building information
                 string buildingSQL = @"
@@ -133,6 +170,9 @@ namespace Housing
                     this.bulletedBuildings.DataValueField = "BuildingID";
                     this.bulletedBuildings.DataBind();
                 }
+                //this.ParentPortlet.ShowFeedback(FeedbackType.Message,
+                //    String.Format("{0}<br /><br />Gender: |{2}|<br />Greek Invl: |{1}|<br />dtBuilding: {3}",
+                //    buildingSQL, this.ParentPortlet.PortletViewState["GreekID"].ToString(), this.ParentPortlet.PortletViewState["Gender"].ToString(), (dtBuilding == null).ToString()));
             }
             catch(Exception ex)
             {

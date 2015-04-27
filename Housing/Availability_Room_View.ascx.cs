@@ -16,7 +16,6 @@ namespace Housing
     {
         #region Public Variables
         OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
-        public static string COMMAND_NAME_ROOM = "PickRoom";
         public bool IsOaks = false;
         #endregion
 
@@ -219,6 +218,62 @@ namespace Housing
                 ORDER BY
 	                Subroom.RoomNumberOnly";
 
+            //Params: [0] = BuildingID, [1] = Gender
+            string oaksRARoomSQL = @"
+                SELECT
+	                B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, SUM(SubRoom.Capacity) AS Capacity, COUNT(HRS.RoomStudentID) AS Occupancy,
+	                CASE
+		                WHEN	SubRoom.Capacity = 1	THEN	1
+										                ELSE	0
+	                END AS IsSuite,
+	                (
+		                SELECT TOP 1
+			                HRSsub.RoomSessionID
+		                FROM
+			                CUS_Housing_Room	Rsub	INNER JOIN	CUS_Housing_RoomSession	HRSsub	ON	Rsub.RoomID			=	HRSsub.RoomID
+																					                AND	HRSsub.HousingYear	=	YEAR(GETDATE())
+		                WHERE
+			                Rsub.BuildingID						=	B.BuildingID
+			                AND
+			                SUBSTRING(Rsub.RoomNumber, 1, 3)	=	SubRoom.RoomNumberOnly
+		                ORDER BY
+			                Rsub.RoomNumber
+	                )	AS	RoomID1,
+	                (
+		                SELECT TOP 1
+			                HRSsub.RoomSessionID
+		                FROM
+			                CUS_Housing_Room	Rsub	INNER JOIN	CUS_Housing_RoomSession	HRSsub	ON	Rsub.RoomID	=	HRSsub.RoomID
+																					                AND	HRSsub.HousingYear	=	YEAR(GETDATE())
+		                WHERE
+			                Rsub.BuildingID	=	B.BuildingID
+			                AND
+			                SUBSTRING(Rsub.RoomNumber, 1, 3)	=	SubRoom.RoomNumberOnly
+		                ORDER BY
+			                Rsub.RoomNumber	DESC
+	                )	AS	RoomID2
+                FROM
+	                CUS_Housing_Building	B	INNER JOIN	(
+												                SELECT
+													                HR.BuildingID, HR.RoomNumber, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly, HR.[Floor], HR.Wing, HR.Capacity, HRS.RoomSessionID, HRS.Gender, HR.isRA
+												                FROM
+													                CUS_Housing_Room	HR	INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
+																													                AND	HRS.HousingYear	=	YEAR(GETDATE())
+												                WHERE
+													                HR.BuildingID	=	?
+											                )						SubRoom	ON	B.BuildingID			=	SubRoom.BuildingID
+								                LEFT JOIN	CUS_Housing_RoomStudent	HRS		ON	SubRoom.RoomSessionID	=	HRS.RoomSessionID
+                WHERE
+	                SubRoom.Gender		IN	(?,'')
+                    AND
+                    SubRoom.Capacity    >   0
+                    AND
+                    SubRoom.isRA        =   1
+                GROUP BY
+	                B.BuildingID, B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, Capacity
+                ORDER BY
+	                Subroom.RoomNumberOnly"; 
+            
             ex = null;
             DataTable dtRooms = null;
 
@@ -227,24 +282,22 @@ namespace Housing
             string roomSQL = dayIndex == 0 ? greekSquatterSQL : (IsOaks ? oaksRoomSQL : standardRoomSQL);
 
             List<OdbcParameter> roomParameters = new List<OdbcParameter>();
+
+            //If it is greek/squatter signup day
             if (dayIndex == 0)
             {
+                //Pass parameters for greek organization and student/room gender
                 roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
                 roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
             }
-            else if(isTodayRA || (dayIndex > 0 && dayIndex < 4))
+            //If today is RA signup or a valid general student signup day
+            else if (isTodayRA || (dayIndex > 0 && dayIndex < 4))
             {
-                if (isTodayRA) { roomSQL = raRoomSQL; }
+                //
+                if (isTodayRA) { roomSQL = IsOaks ? oaksRARoomSQL : raRoomSQL; }
                 roomParameters.Add(new OdbcParameter("RoomBuildingID", buildingID));
                 roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
             }
-
-            //Reusing the same OdbcParameter list ("parameters" from the query above) throws an exception so recreate the query parameters in a separate list.
-            //List<OdbcParameter> roomParameters = new List<OdbcParameter>
-            //{
-            //    new OdbcParameter("roomBuildingID", buildingID)
-            //    , new OdbcParameter("gender", this.ParentPortlet.PortletViewState["Gender"].ToString())
-            //};
 
             try
             {
@@ -276,30 +329,37 @@ namespace Housing
             //Make sure that the repeater element being affected is an item or alternating item (essentially a row of content)
             if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
             {
-                //Get the current row of data being mapped to the controls
-                DataRow row = (e.Item.DataItem as DataRowView).Row;
-
-                PlaceHolder phBeds = (PlaceHolder)e.Item.FindControl("phSpots");
-                Literal roomNumber = (Literal)e.Item.FindControl("ltlRoomNumber");
-
-                if (IsOaks)
+                try
                 {
-                    bool isSuite = row["IsSuite"].ToString() == "1";
-                    roomNumber.Text = String.Format("{0} {1} ({2}): ", row["BuildingCode"].ToString(), row["RoomNumberOnly"].ToString(), (isSuite ? "Suite" : "Double"));
+                    //Get the current row of data being mapped to the controls
+                    DataRow row = (e.Item.DataItem as DataRowView).Row;
 
-                    //Add controls for Oaks beds, suites are differentiated by letters, double rooms by numbers
-                    phBeds.Controls.Add(BuildBedControl(row["RoomID1"].ToString(), (isSuite ? "A" : "1")));
-                    phBeds.Controls.Add(BuildBedControl(row["RoomID2"].ToString(), (isSuite ? "B" : "2")));
-                }
-                else
-                {
-                    //Find the existing control to display the room number and assign the appropriate text
-                    roomNumber.Text = String.Format("{0} {1}: ", row["BuildingCode"].ToString(), row["RoomNumber"].ToString());
-                    //Loop through the capacity of each room and create a bed for each spot
-                    for (int ii = 1; ii <= int.Parse(row["Capacity"].ToString()); ii++)
+                    PlaceHolder phBeds = (PlaceHolder)e.Item.FindControl("phSpots");
+                    Literal roomNumber = (Literal)e.Item.FindControl("ltlRoomNumber");
+
+                    if (IsOaks)
                     {
-                        phBeds.Controls.Add(BuildBedControl(row["RoomSessionID"].ToString(), ii.ToString()));
+                        bool isSuite = row["IsSuite"].ToString() == "1";
+                        roomNumber.Text = String.Format("{0} {1} ({2}): ", row["BuildingCode"].ToString(), row["RoomNumberOnly"].ToString(), (isSuite ? "Suite" : "Double"));
+
+                        //Add controls for Oaks beds, suites are differentiated by letters, double rooms by numbers
+                        phBeds.Controls.Add(BuildBedControl(row["RoomID1"].ToString(), (isSuite ? "A" : "1")));
+                        phBeds.Controls.Add(BuildBedControl(row["RoomID2"].ToString(), (isSuite ? "B" : "2")));
                     }
+                    else
+                    {
+                        //Find the existing control to display the room number and assign the appropriate text
+                        roomNumber.Text = String.Format("{0} {1}: ", row["BuildingCode"].ToString(), row["RoomNumber"].ToString());
+                        //Loop through the capacity of each room and create a bed for each spot
+                        for (int ii = 1; ii <= int.Parse(row["Capacity"].ToString()); ii++)
+                        {
+                            phBeds.Controls.Add(BuildBedControl(row["RoomSessionID"].ToString(), ii.ToString()));
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br />{1}", ex.Message, ex.InnerException));
                 }
             }
         }
