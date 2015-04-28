@@ -22,6 +22,7 @@ namespace Housing
     {
         OdbcConnectionClass3 cxConn = new OdbcConnectionClass3("ERPDataConnection.config");
         OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
+
         public override string ViewName { get { return "Roommate Invitations"; } }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -37,13 +38,28 @@ namespace Housing
         {
             string roomSQL = @"
                 SELECT
-                    Building.BuildingName, Building.BuildingCode, Room.RoomNumber
+                    Building.BuildingName, Building.BuildingCode, SUBSTRING(Room.RoomNumber, 1, 3) AS RoomNumberOnly, SUM(Room.Capacity) AS Capacity
                 FROM
                     CUS_Housing_Room    Room    INNER JOIN  CUS_Housing_Building    Building    ON  Room.BuildingID =   Building.BuildingID
-                                                INNER JOIN  CUS_Housing_RoomSession HRS         ON  Room.RoomID     =   HRS.RoomID
-                                                                                                AND HRS.HousingYear =   YEAR(GETDATE())
-                WHERE
-                    HRS.RoomSessionID = ?";
+												,
+												(
+													SELECT
+														BuildingCode, SUBSTRING(RoomNumber, 1, 3) AS RoomNumberOnly
+													FROM
+														CUS_Housing_RoomSession	HRS	INNER JOIN	CUS_Housing_Room		HRsub	ON	HRS.RoomID			=	HRsub.RoomID
+																					INNER JOIN	CUS_Housing_Building	HBsub	ON	HRsub.BuildingID	=	HBsub.BuildingID
+													WHERE
+														HRS.RoomSessionID	=	?
+												)									Sess
+				WHERE
+					SUBSTRING(Room.RoomNumber, 1, 3)	=	Sess.RoomNumberOnly
+				AND
+					Building.BuildingCode	=	Sess.BuildingCode
+				GROUP BY
+					Building.BuildingName, Building.BuildingCode, SUBSTRING(Room.RoomNumber, 1, 3)
+				ORDER BY
+					Building.BuildingName, RoomNumberOnly
+            ";
             Exception exRoomDetail = null;
             DataTable dtRoomDetail = null;
             List<OdbcParameter> parameters = new List<OdbcParameter>
@@ -55,7 +71,10 @@ namespace Housing
             {
                 dtRoomDetail = jicsConn.ConnectToERP(roomSQL, ref exRoomDetail, parameters);
                 DataRow room = dtRoomDetail.Rows[0];
-                this.ltlRoomSelected.Text = String.Format("{0} {1}", room["BuildingName"].ToString(), room["RoomNumber"].ToString());
+                this.ltlRoomSelected.Text = this.ltlRoom.Text = String.Format("{0} {1}", room["BuildingName"].ToString(), room["RoomNumberOnly"].ToString());
+                this.ParentPortlet.PortletViewState["BuildingCode"] = room["BuildingCode"].ToString();
+                this.ParentPortlet.PortletViewState["RoomNumber"] = room["RoomNumberOnly"].ToString();
+                this.ParentPortlet.PortletViewState["RoomCapacity"] = room["Capacity"].ToString();
             }
             catch (Exception ex)
             {
@@ -68,39 +87,74 @@ namespace Housing
             this.panelStudentDetail.Visible = false;
             string roommateSQL = @"
                 SELECT
-	                HB.BuildingName, HR.RoomNumber, HR.Capacity, ISNULL(FU.FirstName,'') AS FirstName, ISNULL(FU.LastName,'') AS LastName
+	                HB.BuildingName, HR.RoomNumber, HR.Capacity, ISNULL(FU.FirstName,'') AS FirstName, ISNULL(FU.LastName,'') AS LastName, HRS.RoomSessionID, 'Occupant' AS OccupancyStatus
                 FROM
-	                CUS_Housing_RoomSession	HRS	INNER JOIN	CUS_Housing_Room		HR		ON	HRS.RoomID			=	HR.RoomID
-								                INNER JOIN	CUS_Housing_Building	HB		ON	HR.BuildingID		=	HB.BuildingID
-								                LEFT JOIN	CUS_Housing_RoomStudent	HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-								                LEFT JOIN	FWK_User				FU		ON	HRStu.StudentID		=	FU.ID
+	                CUS_Housing_RoomSession	HRS	INNER JOIN	CUS_Housing_Room			HR		ON	HRS.RoomID			=	HR.RoomID
+								                INNER JOIN	CUS_Housing_Building		HB		ON	HR.BuildingID		=	HB.BuildingID
+								                INNER JOIN	CUS_Housing_RoomStudent		HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
+								                INNER JOIN	FWK_User					FU		ON	HRStu.StudentID		=	FU.ID
                 WHERE
-	                HRS.RoomSessionID	=	?
+					HRS.HousingYear	=	YEAR(GETDATE())
+				AND
+	                HB.BuildingCode	=	?
+				AND
+					SUBSTRING(HR.RoomNumber, 1, 3)	=	?
+				UNION
+                SELECT
+	                HB.BuildingName, HR.RoomNumber, HR.Capacity, ISNULL(FU.FirstName,'') AS FirstName, ISNULL(FU.LastName,'') AS LastName, HRS.RoomSessionID, 'Invited' AS OccupancyStatus
+                FROM
+	                CUS_Housing_RoomSession	HRS	INNER JOIN	CUS_Housing_Room			HR		ON	HRS.RoomID			=	HR.RoomID
+								                INNER JOIN	CUS_Housing_Building		HB		ON	HR.BuildingID		=	HB.BuildingID
+								                INNER JOIN	CUS_Housing_RoomReservation	HRR		ON	HRS.RoomSessionID	=	HRR.RoomSessionID
+								                INNER JOIN	FWK_User					FU		ON	HRR.StudentID		=	FU.ID
+                WHERE
+					HRS.HousingYear	=	YEAR(GETDATE())
+				AND
+	                HB.BuildingCode	=	?
+				AND
+					SUBSTRING(HR.RoomNumber, 1, 3)	=	?
+				ORDER BY
+					RoomNumber, LastName
             ";
             Exception exRoommates = null;
             DataTable dtRoommates = null;
             List<OdbcParameter> param = new List<OdbcParameter>
             {
-                new OdbcParameter("RoomSessionID", this.ParentPortlet.PortletViewState["RoomSessionID"].ToString())
+                //  new OdbcParameter("RoomSessionID1", this.ParentPortlet.PortletViewState["RoomSessionID"].ToString())
+                //, new OdbcParameter("RoomSessionID2", this.ParentPortlet.PortletViewState["RoomSessionID"].ToString())
+                  new OdbcParameter("BuildingCode1", this.ParentPortlet.PortletViewState["BuildingCode"].ToString())
+                , new OdbcParameter("RoomNumber1", this.ParentPortlet.PortletViewState["RoomNumber"].ToString())
+                , new OdbcParameter("BuildingCode2", this.ParentPortlet.PortletViewState["BuildingCode"].ToString())
+                , new OdbcParameter("RoomNumber2", this.ParentPortlet.PortletViewState["RoomNumber"].ToString())
             };
 
+            this.ParentPortlet.PortletViewState["IsAtCapacity"] = false;
             try
             {
                 dtRoommates = jicsConn.ConnectToERP(roommateSQL, ref exRoommates, param);
                 if (exRoommates != null) { throw exRoommates; }
                 if (dtRoommates != null)
                 {
+                    int capacity = int.Parse(this.ParentPortlet.PortletViewState["RoomCapacity"].ToString());
+                    bool isAtCapacity = dtRoommates.Rows.Count >= capacity;
+                    this.ParentPortlet.PortletViewState["IsAtCapacity"] = isAtCapacity;
+                    if (!isAtCapacity)
+                    {
+                        dtRoommates.Rows.Add(
+                            this.ParentPortlet.PortletViewState["BuildingCode"].ToString(),
+                            this.ParentPortlet.PortletViewState["RoomNumber"].ToString(),
+                            this.ParentPortlet.PortletViewState["RoomCapacity"].ToString(),
+                            "", "",
+                            dtRoommates.Rows[0]["RoomSessionID"].ToString(),"Occupant"
+                        );
+                    }
                     this.repeaterRoommates.DataSource = dtRoommates;
                     this.repeaterRoommates.DataBind();
-                    if (dtRoommates.Rows.Count > 0)
-                    {
-                        this.ltlRoom.Text = String.Format("{0} {1}", dtRoommates.Rows[0]["BuildingName"].ToString(), dtRoommates.Rows[0]["RoomNumber"].ToString());
-                    }
                 }
             }
             catch (Exception ex)
             {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ex.Message, ex.InnerException));
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error while binding repeater:<br />{0}<br /><br />{1}<br />{2}", ex.Message, ex.InnerException, ex.ToString()));
             }
             finally
             {
@@ -113,34 +167,54 @@ namespace Housing
             if (e.Item.ItemType == ListItemType.AlternatingItem || e.Item.ItemType == ListItemType.Item)
             {
                 DataRow roommate = (e.Item.DataItem as DataRowView).Row;
+
+                PlaceHolder phRow = e.Item.FindControl("phRoommate") as PlaceHolder;
+                
                 //If the bed is available, allow the user to invite a friend
                 if (String.IsNullOrEmpty(roommate["FirstName"].ToString() + roommate["LastName"].ToString()))
                 {
-                    PlaceHolder phRow = e.Item.FindControl("phRoommate") as PlaceHolder;
-                    TextBox tbEmail = new TextBox();
-                    tbEmail.ID = "tbFindEmail";
-                    phRow.Controls.Add(tbEmail);
+                    if (!bool.Parse(this.ParentPortlet.PortletViewState["IsAtCapacity"].ToString()))
+                    {
+                        TextBox tbEmail = new TextBox();
+                        tbEmail.ID = "tbFindEmail";
+                        phRow.Controls.Add(tbEmail);
 
-                    Literal ltlEmailSuffix = new Literal();
-                    ltlEmailSuffix.Text = "@carthage.edu";
-                    phRow.Controls.Add(ltlEmailSuffix);
+                        Literal ltlEmailSuffix = new Literal();
+                        ltlEmailSuffix.Text = "@carthage.edu";
+                        phRow.Controls.Add(ltlEmailSuffix);
 
-                    Button btnCheckEmail = new Button();
-                    btnCheckEmail.Text = "Check Email";
-                    btnCheckEmail.UseSubmitBehavior = false;
-                    btnCheckEmail.Click += btnCheckEmail_Click;
-                    phRow.Controls.Add(btnCheckEmail);
+                        Button btnCheckEmail = new Button();
+                        btnCheckEmail.Text = "Check Email";
+                        btnCheckEmail.UseSubmitBehavior = false;
+                        btnCheckEmail.CommandArgument = roommate["RoomSessionID"].ToString();
+                        btnCheckEmail.Click += btnCheckEmail_Click;
+                        phRow.Controls.Add(btnCheckEmail);
+                    }
+                }
+                else
+                {
+                    Literal ltlRoommate = new Literal();
+                    ltlRoommate.Text = String.Format("{0}: {1} {2}", roommate["OccupancyStatus"].ToString(), roommate["FirstName"].ToString(), roommate["LastName"].ToString());
+                    phRow.Controls.Add(ltlRoommate);
                 }
             }
         }
 
         private void btnCheckEmail_Click(object sender, EventArgs e)
         {
+            //Flag indicating whether the invitee has satisfied all the criteria
             bool okToEmail = false;
+
+            //If the invitee fails a condition, describe the reason to the user
             string reasonForFailure = "";
 
+            //The "Check Email" button
             Button btn = (Button)sender;
+
+            //The textbox containing the email value entered by the user
             TextBox tbEmail = btn.NamingContainer.FindControl("tbFindEmail") as TextBox;
+
+            //Remove the domain from the email address (if entered) so the username can be checked
             string cleanEmail = tbEmail.Text + (tbEmail.Text.EndsWith("@carthage.edu") ? "" : "@carthage.edu");
 
             PortalUser invited = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(cleanEmail);
@@ -150,22 +224,24 @@ namespace Housing
             }
             else
             {
+                //If the user put in their own email address...
                 if (invited.Guid == PortalUser.Current.Guid)
                 {
                     reasonForFailure = "You cannot reserve a bed for yourself, you've already signed up for a bed.";
                 }
                 else
                 {
+                    //Has the invitee already registered for a room?
                     string inRoomSQL = String.Format(@"
-                    SELECT
-                        StudentID
-                    FROM
-                        CUS_Housing_RoomStudent HRStu   INNER JOIN  CUS_Housing_RoomSession HRS ON  HRStu.RoomSessionID =   HRS.RoomSessionID
-                                                                                                AND HRS.HousingYear     =   YEAR(GETDATE())
-                                                        INNER JOIN  FWK_User                FU  ON  HRStu.StudentID     =   FU.ID
-                    WHERE
-                        FU.HostID =   {0}
-                    ", invited.HostID);
+                        SELECT
+                            StudentID
+                        FROM
+                            CUS_Housing_RoomStudent HRStu   INNER JOIN  CUS_Housing_RoomSession HRS ON  HRStu.RoomSessionID =   HRS.RoomSessionID
+                                                                                                    AND HRS.HousingYear     =   YEAR(GETDATE())
+                                                            INNER JOIN  FWK_User                FU  ON  HRStu.StudentID     =   FU.ID
+                        WHERE
+                            FU.HostID =   {0}
+                        ", invited.HostID);
                     Exception exInRoom = null;
                     DataTable dtInRoom = null;
 
@@ -173,45 +249,50 @@ namespace Housing
                     {
                         dtInRoom = jicsConn.ConnectToERP(inRoomSQL, ref exInRoom);
                         if (exInRoom != null) { throw exInRoom; }
+
+                        //If the invited user has already registered for a room...
+                        if (dtInRoom != null && dtInRoom.Rows.Count > 0)
+                        {
+                            reasonForFailure = String.Format("{0} {1} has already registered for a room.", invited.FirstName, invited.LastName);
+                        }
+                        else
+                        {
+                            //Query to determine the gender of the invited user
+                            string genderSQL = String.Format("SELECT sex FROM profile_rec WHERE profile_rec.id = {0}", invited.HostID);
+                            Exception exGender = null;
+                            DataTable dtGender = null;
+                            //Flag to track whether the inviting and invited students are of the same gender
+                            bool genderMatch = false;
+                            try
+                            {
+                                dtGender = cxConn.ConnectToERP(genderSQL, ref exGender);
+                                if (exGender != null) { throw exGender; }
+                                if (dtGender != null && dtGender.Rows.Count > 0)
+                                {
+                                    genderMatch = this.ParentPortlet.PortletViewState["Gender"].ToString().ToUpper() == dtGender.Rows[0]["sex"].ToString().ToUpper();
+                                    if (!genderMatch)
+                                    {
+                                        reasonForFailure = "Your roommate must be the same gender as yourself.";
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br />{1}", ex.Message, ex.InnerException));
+                            }
+
+                            //If all other criteria have been satisfied, set the okToEmail flag to the last criteria (all others must have been TRUE to get to this point)
+                            okToEmail = genderMatch;
+                        }
                     }
                     catch (Exception ex)
                     {
                         this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ex.Message, ex.InnerException));
                     }
-
-                    if (dtInRoom != null && dtInRoom.Rows.Count > 0)
-                    {
-                        reasonForFailure = String.Format("{0} {1} has already registered for a room.", invited.FirstName, invited.LastName);
-                    }
-                    else
-                    {
-                        string genderSQL = String.Format("SELECT sex FROM profile_rec WHERE profile_rec.id = {0}", invited.HostID);
-                        Exception exGender = null;
-                        DataTable dtGender = null;
-                        bool genderMatch = false;
-                        try
-                        {
-                            dtGender = cxConn.ConnectToERP(genderSQL, ref exGender);
-                            if (exGender != null) { throw exGender; }
-                            if (dtGender != null && dtGender.Rows.Count > 0)
-                            {
-                                genderMatch = this.ParentPortlet.PortletViewState["Gender"].ToString().ToUpper() == dtGender.Rows[0]["sex"].ToString().ToUpper();
-                                if (!genderMatch)
-                                {
-                                    reasonForFailure = "Your roommate must be the same gender as yourself.";
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br />{1}", ex.Message, ex.InnerException));
-                        }
-                        okToEmail = genderMatch;
-                    }
                 }
             }
 
-
+            //Set the visibility of the page elements based on the determination of the above criteria
             this.panelStudentDetail.Visible = true;
             this.panelStudentOK.Visible = okToEmail;
             this.panelStudentNo.Visible = !okToEmail;
@@ -220,18 +301,44 @@ namespace Housing
                 this.ltlStudentName.Text = invited.ToFirstLastNameDisplay().ToString();
                 this.ltlStudentEmail.Text = invited.EmailAddress;
                 this.btnSendInvitation.CommandArgument = invited.HostID;
+                this.ParentPortlet.PortletViewState["InvitedRoomSessionID"] = btn.CommandArgument;
             }
             else
             {
                 this.ltlStudentEmail2.Text = cleanEmail;
                 this.ltlReason.Text = reasonForFailure;
                 this.btnSendInvitation.CommandArgument = "0";
+                this.ParentPortlet.PortletViewState["InvitedRoomSessionID"] = null;
             }
         }
 
         protected void btnSendInvitation_Click(object sender, EventArgs e)
         {
             Button btnInvite = sender as Button;
+
+            PortalUser invitee = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByHostID(btnInvite.CommandArgument);
+
+            string invitationSQL = String.Format(@"
+                INSERT INTO CUS_Housing_RoomReservation (RoomSessionID, StudentID, ReservationTime, CreatedByID)
+                VALUES('{0}', '{1}', GETDATE(), '{2}')
+            ", this.ParentPortlet.PortletViewState["InvitedRoomSessionID"].ToString(), invitee.Guid.ToString(), PortalUser.Current.Guid.ToString());
+            Exception exInvite = null;
+            List<OdbcParameter> paramInvite = new List<OdbcParameter>
+            {
+                  new OdbcParameter("RoomSessionID", this.ParentPortlet.PortletViewState["InvitedRoomSessionID"].ToString())
+                , new OdbcParameter("InviteeID", invitee.Guid.ToString())
+                , new OdbcParameter("InviterID", PortalUser.Current.Guid.ToString())
+            };
+
+            try
+            {
+                jicsConn.ConnectToERP(invitationSQL, ref exInvite, paramInvite);
+                if (exInvite != null) { throw exInvite; }
+            }
+            catch (Exception ex)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Could not insert invitation:<br />{0}<br />{1}<br />{2}", ex.Message, ex.InnerException, invitationSQL));
+            }
 
             string emailSQL = String.Format(@"
                 SELECT
@@ -274,8 +381,7 @@ namespace Housing
 
                     PortalUser recipient = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(drEmail["Email"].ToString());
 
-                    string emailTo = recipient.EmailAddress;
-                    string emailSubject = "Housing Roommate Invitation";
+                    string emailTo = recipient.EmailAddress, emailSubject = "Housing Roommate Invitation";
 
                     string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
                     PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
@@ -288,12 +394,12 @@ namespace Housing
                         recipients.Add(recipient);
                         new EmailLogger().Log(emailSender, recipients, null, null, null, emailSubject, emailBody, null, null);
                     }
-
+                    LoadRoommates();
                 }
             }
             catch (Exception ex)
             {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ex.Message, ex.InnerException.ToString()));
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error when emailing invitee<br />{0}<br /><br />{1}", ex.Message, ex.InnerException.ToString()));
             }
         }
     }

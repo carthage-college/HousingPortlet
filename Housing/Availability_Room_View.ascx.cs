@@ -17,6 +17,7 @@ namespace Housing
         #region Public Variables
         OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
         public bool IsOaks = false;
+        public bool IsTodayGreekSquatter = false;
         #endregion
 
         public override string ViewName { get { return "Choose A Room"; } }
@@ -109,7 +110,17 @@ namespace Housing
             // Params: [0] = GreekID (invl_table.invl), [1] = Gender, [2] = StudentID
             string greekSquatterSQL = String.Format(@"
                 SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy
+                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy,
+					CASE RIGHT(HR.RoomNumber, 1)
+						WHEN	'A'	THEN	1
+						WHEN	'B'	THEN	1
+									ELSE	0
+					END	AS IsSuite, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly,
+					CASE RIGHT(HR.RoomNumber,1)
+						WHEN	'A'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
+						WHEN	'B'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
+									ELSE	''
+					END AS RoomID1, '' AS RoomID2
                 FROM
                     CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB		ON  HR.BuildingID		=   HB.BuildingID
 								            INNER JOIN	CUS_Housing_RoomSession	    HRS		ON	HR.RoomID			=	HRS.RoomID
@@ -126,7 +137,17 @@ namespace Housing
 					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
                 UNION
                 SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy
+                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy,
+					CASE RIGHT(HR.RoomNumber, 1)
+						WHEN	'A'	THEN	1
+						WHEN	'B'	THEN	1
+									ELSE	0
+					END	AS IsSuite, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly,
+					CASE RIGHT(HR.RoomNumber,1)
+						WHEN	'A'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
+						WHEN	'B'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
+									ELSE	''
+					END AS RoomID1, '' AS RoomID2
                 FROM
                     CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB		ON  HR.BuildingID		=   HB.BuildingID
 								            INNER JOIN	CUS_Housing_RoomSession	    HRS		ON	HR.RoomID			=	HRS.RoomID
@@ -279,12 +300,14 @@ namespace Housing
 
             bool isTodayRA = bool.Parse(this.ParentPortlet.PortletViewState["IsTodayRA"].ToString());
             int dayIndex = int.Parse(this.ParentPortlet.PortletViewState["DayIndex"].ToString());
+            IsTodayGreekSquatter = dayIndex == 0;
             string roomSQL = dayIndex == 0 ? greekSquatterSQL : (IsOaks ? oaksRoomSQL : standardRoomSQL);
 
             List<OdbcParameter> roomParameters = new List<OdbcParameter>();
 
             //If it is greek/squatter signup day
-            if (dayIndex == 0)
+            //if (dayIndex == 0)
+            if(IsTodayGreekSquatter)
             {
                 //Pass parameters for greek organization and student/room gender
                 roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
@@ -343,8 +366,19 @@ namespace Housing
                         roomNumber.Text = String.Format("{0} {1} ({2}): ", row["BuildingCode"].ToString(), row["RoomNumberOnly"].ToString(), (isSuite ? "Suite" : "Double"));
 
                         //Add controls for Oaks beds, suites are differentiated by letters, double rooms by numbers
-                        phBeds.Controls.Add(BuildBedControl(row["RoomID1"].ToString(), (isSuite ? "A" : "1")));
-                        phBeds.Controls.Add(BuildBedControl(row["RoomID2"].ToString(), (isSuite ? "B" : "2")));
+                        string rsID = isSuite ? row["RoomID1"].ToString() : row["RoomSessionID"].ToString();
+                        Control bedControl1 = BuildBedControl(rsID, (isSuite ? "A" : "1"));
+                        if (bedControl1 != null)
+                        {
+                            phBeds.Controls.Add(bedControl1);
+                        }
+
+                        rsID = isSuite ? row["RoomID2"].ToString() : row["RoomSessionID"].ToString();
+                        Control bedControl2 = BuildBedControl(rsID, (isSuite ? "B" : "2"));
+                        if (bedControl2 != null)
+                        {
+                            phBeds.Controls.Add(bedControl2);
+                        }
                     }
                     else
                     {
@@ -398,93 +432,98 @@ namespace Housing
         /// <returns></returns>
         public Control BuildBedControl(string RoomSessionID, string BedIndex)
         {
-            string invitationSQL = @"
-                SELECT
-                    HRR.StudentID, FU.FirstName, FU.LastName
-                FROM
-                    CUS_Housing_RoomReservation HRR INNER JOIN  FWK_User    FU  ON  HRR.StudentID   =   FU.ID
-                WHERE
-                    HRR.RoomSessionID   =   ?
-                ORDER BY
-                    HRR.ReservationTime
-            ";
-            Exception exInvitation = null;
-            DataTable dtInvitation = null;
-            List<OdbcParameter> paramInvite = new List<OdbcParameter> { new OdbcParameter("RoomSessionID", RoomSessionID) };
-
-            try
-            {
-                dtInvitation = jicsConn.ConnectToERP(invitationSQL, ref exInvitation, paramInvite);
-                if (exInvitation != null) { throw exInvitation; }
-            }
-            catch (Exception ex)
-            {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error retrieving invitations:<br />{0}<br />{1}", ex.Message, ex.InnerException));
-            }
-
-            //Define SQL to get name details about the occupant
-            string getOccupantSQL = @"
-                SELECT
-                    U.FirstName, U.LastName
-                FROM
-                    CUS_Housing_RoomStudent HRStu   INNER JOIN  FWK_User    U   ON  HRStu.StudentID =   U.ID
-                WHERE
-                    HRStu.RoomSessionID =   ?
-            ";
-
-            //Define parameter for query
-            List<OdbcParameter> paramBed = new List<OdbcParameter> { new OdbcParameter("bedRoomSessionID", RoomSessionID) };
-
             //The object to be passed back (during initial phase this was either a Button or Literal object)
             Control returnObj = null;
-            Exception exBed = null;
-            DataTable dtBed = null;
-            int bedNumber = -1;
-            bool bedIsNumber = int.TryParse(BedIndex, out bedNumber);
-            //Make adjustments to bed number when dealing with Oaks' suites
-            bedNumber = bedIsNumber ? bedNumber : (BedIndex == "A" ? 1 : 2);
 
-            try
+            if (RoomSessionID != "")
             {
-                //Execute SQL
-                dtBed = jicsConn.ConnectToERP(getOccupantSQL, ref exBed, paramBed);
-                //If the executed SQL or the attempt to establish a database connection generates an exception, throw it to be handled by the "catch" below
-                if (exBed != null) { throw exBed; }
+                string invitationSQL = @"
+                    SELECT
+                        HRR.StudentID, FU.FirstName, FU.LastName
+                    FROM
+                        CUS_Housing_RoomReservation HRR INNER JOIN  FWK_User    FU  ON  HRR.StudentID   =   FU.ID
+                    WHERE
+                        HRR.RoomSessionID   =   ?
+                    ORDER BY
+                        HRR.ReservationTime
+                ";
+                Exception exInvitation = null;
+                DataTable dtInvitation = null;
+                List<OdbcParameter> paramInvite = new List<OdbcParameter> { new OdbcParameter("RoomSessionID", RoomSessionID) };
 
-                //If no occupant records are found, the bed is empty so create a button the user may select to sign up for the bed
-                //If there are rows but the number of them is less than the current bed index, create the button
-                if (dtBed != null && (dtBed.Rows.Count == 0 || dtBed.Rows.Count < bedNumber))
+                try
                 {
-                    Button btnBed = new Button();
-                    btnBed.Click += chooseBed_Click;
-                    btnBed.CommandArgument = RoomSessionID;
-                    btnBed.CssClass = "bedOccupant";
-                    btnBed.Text = String.Format("Bed {0}", BedIndex);
+                    dtInvitation = jicsConn.ConnectToERP(invitationSQL, ref exInvitation, paramInvite);
+                    if (exInvitation != null) { throw exInvitation; }
+                }
+                catch (Exception ex)
+                {
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error retrieving invitations:<br />{0}<br />{1}", ex.Message, ex.InnerException));
+                }
 
-                    //The label for the button is the name of the invitee or the bed number/letter.
-                    if (dtInvitation != null && dtInvitation.Rows.Count >= bedNumber)
+                //Define SQL to get name details about the occupant
+                string getOccupantSQL = @"
+                    SELECT
+                        U.FirstName, U.LastName
+                    FROM
+                        CUS_Housing_RoomStudent HRStu   INNER JOIN  FWK_User    U   ON  HRStu.StudentID =   U.ID
+                    WHERE
+                        HRStu.RoomSessionID =   ?
+                ";
+
+                //Define parameter for query
+                List<OdbcParameter> paramBed = new List<OdbcParameter> { new OdbcParameter("bedRoomSessionID", RoomSessionID) };
+
+                Exception exBed = null;
+                DataTable dtBed = null;
+                int bedNumber = -1;
+                bool bedIsNumber = int.TryParse(BedIndex, out bedNumber);
+                //Make adjustments to bed number when dealing with Oaks' suites
+                bedNumber = bedIsNumber ? bedNumber : (BedIndex == "A" ? 1 : 2);
+
+                try
+                {
+                    //Execute SQL
+                    dtBed = jicsConn.ConnectToERP(getOccupantSQL, ref exBed, paramBed);
+                    //If the executed SQL or the attempt to establish a database connection generates an exception, throw it to be handled by the "catch" below
+                    if (exBed != null) { throw exBed; }
+
+                    //If no occupant records are found, the bed is empty so create a button the user may select to sign up for the bed
+                    //If there are rows but the number of them is less than the current bed index, create the button
+                    if (dtBed != null && (dtBed.Rows.Count == 0 || dtBed.Rows.Count < bedNumber))
                     {
-                        btnBed.CssClass += " bedReserved";
-                        btnBed.Text = String.Format("{0} {1} invited", dtInvitation.Rows[bedNumber - 1]["FirstName"].ToString(), dtInvitation.Rows[bedNumber - 1]["LastName"].ToString());
-                    }
+                        Button btnBed = new Button();
+                        btnBed.Click += chooseBed_Click;
+                        btnBed.CommandArgument = RoomSessionID;
+                        btnBed.CssClass = "bedOccupant";
+                        btnBed.Text = String.Format("Bed {0}", BedIndex);
 
-                    returnObj = btnBed;
+                        //The label for the button is the name of the invitee or the bed number/letter.
+                        if (dtInvitation != null && dtInvitation.Rows.Count >= bedNumber)
+                        {
+                            btnBed.CssClass += " bedReserved";
+                            btnBed.Text = String.Format("{0} {1} invited", dtInvitation.Rows[bedNumber - 1]["FirstName"].ToString(), dtInvitation.Rows[bedNumber - 1]["LastName"].ToString());
+                        }
+
+                        returnObj = btnBed;
+                    }
+                    else
+                    {
+                        DataRow drBed = dtBed.Rows[bedNumber - 1];
+                        Label lblBed = new Label();
+                        lblBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
+                        lblBed.CssClass = "bedOccupant";
+                        returnObj = lblBed;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    DataRow drBed = dtBed.Rows[bedNumber - 1];
-                    Label lblBed = new Label();
-                    lblBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
-                    lblBed.CssClass = "bedOccupant";
-                    returnObj = lblBed;
+                    Literal ltlEx = new Literal();
+                    ltlEx.Text = String.Format("Error querying residents of room:<br />{0}<br /><br />{1}<br ><br />{2}", ex.Message, ex.StackTrace, RoomSessionID);
+                    returnObj = ltlEx;
                 }
             }
-            catch (Exception ex)
-            {
-                Literal ltlEx = new Literal();
-                ltlEx.Text = String.Format("Error querying residents of room:<br />{0}<br /><br />{1}<br ><br />{2}", ex.Message, ex.StackTrace, RoomSessionID);
-                returnObj = ltlEx;
-            }
+
             return returnObj;
         }
     }

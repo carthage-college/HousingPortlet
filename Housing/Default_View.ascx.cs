@@ -136,7 +136,12 @@ namespace Housing
                 //Show the building and room number the student currently occupies
                 this.ltlCurrentHousing.Text = String.Format("{0} {1}", drCxData["bldg"].ToString(), drCxData["room"].ToString());
                 this.panelCommuter.Visible = this.ltlNotResident.Visible = isCommuter;
-                this.panelCurrentHousing.Visible = this.panelUnregistered.Visible = !isCommuter;
+                //this.panelCurrentHousing.Visible = this.panelUnregistered.Visible = !isCommuter;
+                this.panelCurrentHousing.Visible = !isCommuter;
+                if (this.panelUnregistered.Visible)
+                {
+                    this.panelUnregistered.Visible = !isCommuter;
+                }
 
                 //Get the start dates for RAs and the general student population
                 DateTime? raStartDate = null, generalStartDate = null;
