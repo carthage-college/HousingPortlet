@@ -366,15 +366,17 @@ namespace Housing
                         roomNumber.Text = String.Format("{0} {1} ({2}): ", row["BuildingCode"].ToString(), row["RoomNumberOnly"].ToString(), (isSuite ? "Suite" : "Double"));
 
                         //Add controls for Oaks beds, suites are differentiated by letters, double rooms by numbers
-                        string rsID = isSuite ? row["RoomID1"].ToString() : row["RoomSessionID"].ToString();
+                        //string rsID = isSuite ? row["RoomID1"].ToString() : row["RoomSessionID"].ToString();
+                        string rsID = row["RoomID1"].ToString();
                         Control bedControl1 = BuildBedControl(rsID, (isSuite ? "A" : "1"));
                         if (bedControl1 != null)
                         {
                             phBeds.Controls.Add(bedControl1);
                         }
 
-                        rsID = isSuite ? row["RoomID2"].ToString() : row["RoomSessionID"].ToString();
-                        Control bedControl2 = BuildBedControl(rsID, (isSuite ? "B" : "2"));
+                        //rsID = isSuite ? row["RoomID2"].ToString() : row["RoomSessionID"].ToString();
+                        string rsID2 = row["RoomID2"].ToString();
+                        Control bedControl2 = BuildBedControl(rsID2, (isSuite ? "B" : "2"));
                         if (bedControl2 != null)
                         {
                             phBeds.Controls.Add(bedControl2);
@@ -490,7 +492,7 @@ namespace Housing
 
                     //If no occupant records are found, the bed is empty so create a button the user may select to sign up for the bed
                     //If there are rows but the number of them is less than the current bed index, create the button
-                    if (dtBed != null && (dtBed.Rows.Count == 0 || dtBed.Rows.Count < bedNumber))
+                    if (dtBed != null && (dtBed.Rows.Count == 0 || (bedIsNumber && dtBed.Rows.Count < bedNumber)))
                     {
                         Button btnBed = new Button();
                         btnBed.Click += chooseBed_Click;
@@ -509,7 +511,8 @@ namespace Housing
                     }
                     else
                     {
-                        DataRow drBed = dtBed.Rows[bedNumber - 1];
+                        //If the bed is not in a suite, take the corresponding (0-index-based) row from the recordset. If the bed is a suite, grab the first (0) row
+                        DataRow drBed = dtBed.Rows[(bedIsNumber ? bedNumber - 1 : 0)];
                         Label lblBed = new Label();
                         lblBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
                         lblBed.CssClass = "bedOccupant";

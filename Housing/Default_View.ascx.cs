@@ -10,14 +10,6 @@ using Jenzabar.Portal.Framework;
 using Jenzabar.Portal.Framework.Web.UI;
 using CUS.OdbcConnectionClass3;
 
-using System.Text;  //StringBuilder
-using ConfigSettings = Jenzabar.Common.Configuration.ConfigSettings;
-using Jenzabar.Common;  //ObjectFactoryWrapper
-using Jenzabar.Portal.Framework.EmailLogging;   //EmailLogger
-using Jenzabar.Portal.Framework.Facade; //IPortalUserFacade
-using Jenzabar.Common.Mail; //ValidEmail()
-
-
 namespace Housing
 {
     public partial class Default_View : PortletViewBase
@@ -39,6 +31,19 @@ namespace Housing
                 int userID = 0;
                 int.TryParse(PortalUser.Current.HostID, out userID);
                 return userID;
+            }
+        }
+        public int CONFIG_END_HOUR
+        {
+            get
+            {
+                string CONFIG_END_TIME = GetHousingSetting("END_TIME");
+                int endTime = 0;
+                if (!int.TryParse(CONFIG_END_TIME, out endTime))
+                {
+                    endTime = 15;
+                }
+                return endTime;
             }
         }
         public int DayIndex;
@@ -71,21 +76,6 @@ namespace Housing
             //If the DataRow object is null, the student has not yet signed up for a room
             bool isRegisteredForHousing = drUpcomingHousing != null;
 
-            //If the student hasn't signed up for housing, retrieve and display the invitations extended to them
-            if (!isRegisteredForHousing)
-            {
-                if (drCxData != null)
-                {
-                    DataTable dtInvitations = GetInvitations(drCxData["sex"].ToString());
-                }
-            }
-            //If the student has signed up for housing, display their roommates
-            else
-            {
-                this.panelInvitations.Visible = false;
-                GetRoommates(drUpcomingHousing["RoomSessionID"].ToString());
-            }
-
             GetExtendedInvitations();
 
             bool isCommuter = studentIsCommuter(drCxData);
@@ -93,13 +83,19 @@ namespace Housing
             //If the query returned results, load the data into the controls on the page
             if (drCxData != null && drCxData["include"].ToString().Trim() != "GPS")
             {
+                //Load the student's name
                 this.ltlStudentName.Text = String.Format("{0} {1}", drCxData["firstname"].ToString(), drCxData["lastname"].ToString());
 
+                //If the student has already registered for housing, show the registered panel
                 this.panelRegistered.Visible = isRegisteredForHousing;
 
+                //If the student has not yet registered for housing, show the unregistered panel
                 this.panelUnregistered.Visible = !isRegisteredForHousing;
 
+                //Display the name of the greek organization to which the student belongs
                 this.ltlGreekStatus.Text = drCxData["greek_name"].ToString().Length > 0 ? String.Format("a member of {0}", drCxData["greek_name"].ToString()) : "not a member of a residential fraternity or sorority";
+                
+                //Store the CX "invl" field in the viewstate
                 this.ParentPortlet.PortletViewState["GreekID"] = drCxData["greekid"].ToString();
 
                 bool hasHold = (drCxData["advPayHold"].ToString() + drCxData["unbal_hold"].ToString()).Length > 0;
@@ -174,6 +170,22 @@ namespace Housing
                     DateTime firstRegister = GetCreditHourStartTime(generalStartDate.Value, int.Parse(drCxData["career_hours"].ToString()));
                     this.ltlFirstRegisterDateTime.Text = String.Format("{0:h:mm tt} on {1:dddd, MMMM d}", firstRegister, firstRegister);
                 }
+
+                this.ParentPortlet.PortletViewState["maySignUp"] = isValidTime && mayRegister;
+                //If the student hasn't signed up for housing, retrieve and display the invitations extended to them
+                if (!isRegisteredForHousing)
+                {
+                    if (drCxData != null)
+                    {
+                        DataTable dtInvitations = GetInvitations(drCxData["sex"].ToString());
+                    }
+                }
+                //If the student has signed up for housing, display their roommates
+                else
+                {
+                    this.panelInvitations.Visible = false;
+                    GetRoommates(drUpcomingHousing["RoomSessionID"].ToString());
+                }
             }
             else
             {
@@ -244,10 +256,20 @@ namespace Housing
                 SELECT
                     FU.FirstName, FU.LastName
                 FROM
-                    CUS_Housing_RoomStudent HRStu   INNER JOIN  CUS_Housing_RoomSession HRS ON  HRStu.RoomSessionID =   HRS.RoomSessionID
-                                                    INNER JOIN  FWK_User                FU  ON  HRStu.StudentID     =   FU.ID
-                WHERE
-                    HRStu.RoomSessionID =   ?
+                    CUS_Housing_RoomStudent HRStu   INNER JOIN  CUS_Housing_RoomSession HRS ON  HRStu.RoomSessionID				=   HRS.RoomSessionID
+                                                    INNER JOIN  FWK_User                FU  ON  HRStu.StudentID					=   FU.ID
+													INNER JOIN	CUS_Housing_Room		HR	ON	HRS.RoomID						=	HR.RoomID
+													INNER JOIN
+													(
+														SELECT
+															HR.BuildingID, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly
+														FROM
+															CUS_Housing_RoomSession	HRSsub	INNER JOIN	CUS_Housing_Room	HR	ON	HRSsub.RoomID	    =	HR.RoomID
+																																AND	HRSsub.HousingYear	=	YEAR(GETDATE())
+														WHERE
+															RoomSessionID =   ?
+													)									HR2	ON	HR.BuildingID					=	HR2.BuildingID
+																							AND	SUBSTRING(HR.RoomNumber, 1, 3)	=	HR2.RoomNumberOnly
                 ORDER BY
                     HRStu.RegistrationTime
             ";
@@ -487,6 +509,10 @@ namespace Housing
             return dtExtendedInvite;
         }
 
+        /// <summary>
+        /// Retrieves the student's room assignment for the upcoming session. This is only available after a student has completed the housing sign-up process.
+        /// </summary>
+        /// <returns></returns>
         private DataRow GetUpcomingHousing()
         {
             //Check if the student has already signed up for a room in the current housing period
@@ -501,6 +527,8 @@ namespace Housing
                 WHERE
                     HRStu.StudentID =   ?
             ";
+
+            //Initialize variables to execute query
             Exception exUpcomingHousing = null;
             DataTable dtUpcomingHousing = null;
             DataRow drUpcomingHousing = null;
@@ -577,6 +605,13 @@ namespace Housing
             return generalStartDate.AddDays(daysToAdd).AddHours(startHour);
         }
 
+        /// <summary>
+        /// Determines whether the student is permitted to register at the current time. Examines day, current time, career credit hours and, if the student may not register, passes back a message explaining why
+        /// </summary>
+        /// <param name="dayIndex">The (0-based) index of today based on the greek/squatter start date</param>
+        /// <param name="careerCreditHours">The total completed credit hours over the student's entire career</param>
+        /// <param name="message">A user-readable explanation why they are not permitted to sign-up</param>
+        /// <returns></returns>
         private bool IsValidTimeToRegister(int dayIndex, int careerCreditHours, out string message)
         {
             string ExpiredMessage = "The housing sign-up period has expired. If you have any questions or problems, contact Nina Fleming at <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a>, or call the Dean of Students office at 551-5800.";
@@ -589,6 +624,7 @@ namespace Housing
             }
             else
             {
+                //Get the current time
                 int currentHour = DateTime.Now.Hour;
                 switch (dayIndex)
                 {
@@ -596,6 +632,7 @@ namespace Housing
                         isValidTime = true;
                         break;
                     case 1:
+                        //Students meeting the credit hours for the day may begin signing up at 8 a.m.
                         if (currentHour >= 8 && careerCreditHours >= 126) { isValidTime = true; }
                         else if (currentHour >= 9 && careerCreditHours >= 118) { isValidTime = true; }
                         else if (currentHour >= 10 && careerCreditHours >= 106) { isValidTime = true; }
@@ -609,6 +646,7 @@ namespace Housing
                     case 2:
                         //Anyone from the previous day may sign up at any time on this day
                         if (careerCreditHours >= 61) { isValidTime = true; }
+                        //Students meeting the credit hours for the day may begin signing up at 8 a.m.
                         else if (currentHour >= 8 && careerCreditHours >= 57) { isValidTime = true; }
                         else if (currentHour >= 9 && careerCreditHours >= 53) { isValidTime = true; }
                         else if (currentHour >= 10 && careerCreditHours >= 45) { isValidTime = true; }
@@ -620,9 +658,10 @@ namespace Housing
                         break;
                     case 3:
                         //The housing signup period ends at 2 p.m. but we build in a one hour grace period
-                        if (currentHour >= 15) { message = ExpiredMessage; isValidTime = false; }
+                        if (currentHour >= CONFIG_END_HOUR) { message = ExpiredMessage; isValidTime = false; }
                         //Anyone from the previous day may sign up at any time before the close of housing on this day
                         else if (currentHour >= 0 && careerCreditHours >= 21) { isValidTime = true; }
+                        //Students meeting the credit hours for the day may begin signing up at 8 a.m.
                         else if (currentHour >= 8 && careerCreditHours >= 20) { isValidTime = true; }
                         else if (currentHour >= 9 && careerCreditHours >= 17) { isValidTime = true; }
                         else if (currentHour >= 10 && careerCreditHours >= 12) { isValidTime = true; }
@@ -653,11 +692,25 @@ namespace Housing
                 //Find the Button control
                 Button btnInvite = e.Item.FindControl("btnRoomInvite") as Button;
 
-                //Update the properties of the button control
-                btnInvite.Text = String.Format("{0} {1}", invitation["BuildingName"].ToString(), invitation["RoomNumber"].ToString());
-                btnInvite.CommandArgument = invitation["RoomSessionID"].ToString();
-                //Attach a definition to the click event of the button
-                btnInvite.Click += btnInvite_Click;
+                //Is the student permitted to register? This represents a combination of if it is a valid time (based on day and credit hours) and the absence of any holds (billing or registered hours)
+                bool okToRegister = this.ParentPortlet.PortletViewState["maySignUp"] != null ? bool.Parse(this.ParentPortlet.PortletViewState["maySignUp"].ToString()) : false;
+
+                //If the student is permitted to register, make their invitation a button
+                if (okToRegister)
+                {
+                    //Update the properties of the button control
+                    btnInvite.Text = String.Format("{0} {1}", invitation["BuildingName"].ToString(), invitation["RoomNumber"].ToString());
+                    btnInvite.CommandArgument = invitation["RoomSessionID"].ToString();
+                    //Attach a definition to the click event of the button
+                    btnInvite.Click += btnInvite_Click;
+                }
+                //If the student is not permitted to register yet, display the building and room of their invitation
+                else
+                {
+                    btnInvite.Visible = false;
+                    Literal ltlInvite = e.Item.FindControl("ltlInvite") as Literal;
+                    ltlInvite.Text = String.Format("{0} {1}", invitation["BuildingName"].ToString(), invitation["RoomNumber"].ToString());
+                }
 
                 //Find the Literal control
                 Literal ltlInviter = e.Item.FindControl("ltlInviteBy") as Literal;
@@ -691,7 +744,10 @@ namespace Housing
                 //As the row is bound to the item, cast the item as a DataRow object so the values may be accessed
                 DataRow invitation = (e.Item.DataItem as DataRowView).Row;
 
+                //Get the control to store the name of the invitee
                 Literal ltlInviteName = e.Item.FindControl("ltlInvitedName") as Literal;
+
+                //Load the control with the name of the invitee
                 ltlInviteName.Text = String.Format("{0} {1}", invitation["FirstName"].ToString(), invitation["LastName"].ToString());
             }
         }
@@ -712,8 +768,14 @@ namespace Housing
             return int.Parse((compareDate.Value - variableDate).TotalDays.ToString());
         }
 
+        /// <summary>
+        /// Based on the student's current building assignment in CX, determine whether they are a commuter
+        /// </summary>
+        /// <param name="cxData">DataRow from the CX resultset</param>
+        /// <returns></returns>
         private bool studentIsCommuter(DataRow cxData)
         {
+            //Initialize student's commuter status
             bool returnVal = false;
             if (cxData != null)
             {
@@ -735,6 +797,41 @@ namespace Housing
                                 1207964,1286565,1292888,1366157
                             };
             return arrayRA.Contains(UserID);
+        }
+
+        private string GetHousingSetting(string settingKey)
+        {
+            string settingSQL = String.Format(@"
+                SELECT
+                    SettingValue
+                FROM
+                    CUS_Housing_Settings
+                WHERE
+                    SettingKey  =   ?
+            ");
+
+            string settingValue = "";
+            Exception exSetting = null;
+            DataTable dtSetting = null;
+            List<OdbcParameter> settingParam = new List<OdbcParameter>
+            {
+                new OdbcParameter("SettingKey", settingKey)
+            };
+
+            try
+            {
+                dtSetting = jicsConn.ConnectToERP(settingSQL, ref exSetting, settingParam);
+                if (exSetting != null) { throw exSetting; }
+                if (dtSetting != null && dtSetting.Rows.Count > 0)
+                {
+                    settingValue = dtSetting.Rows[0]["SettingValue"].ToString();
+                }
+            }
+            catch (Exception ex)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Message, String.Format("{0}<br /><br />{1}", ex.Message, ex.InnerException));
+            }
+            return settingValue;
         }
 
         private void UpdateLogin()

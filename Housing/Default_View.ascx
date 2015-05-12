@@ -49,7 +49,7 @@
         <asp:Repeater ID="repeaterInvites" runat="server" OnItemDataBound="repeaterInvites_ItemDataBound">
             <HeaderTemplate><ul></HeaderTemplate>
             <ItemTemplate>
-                <li><asp:Button ID="btnRoomInvite" runat="server" /> (Invited by <asp:Literal ID="ltlInviteBy" runat="server" />)</li>
+                <li><asp:Literal ID="ltlInvite" runat="server" /><asp:Button ID="btnRoomInvite" runat="server" /> (Invited by <asp:Literal ID="ltlInviteBy" runat="server" />)</li>
             </ItemTemplate>
             <FooterTemplate></ul></FooterTemplate>
         </asp:Repeater>
