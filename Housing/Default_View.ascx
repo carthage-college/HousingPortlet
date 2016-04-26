@@ -11,6 +11,18 @@
     <p>Occupants of your room:</p>
     <asp:BulletedList ID="bulletedRoommates" runat="server" CssClass="roommateList">
     </asp:BulletedList>
+
+    <!-- Extended Invitations -->
+    <asp:Panel ID="panelExtendedInvitations2" runat="server">
+        You have extended the following invitation(s):
+        <asp:Repeater ID="repeaterExtendedInvites2" runat="server" OnItemDataBound="repeaterExtendedInvites_ItemDataBound">
+            <HeaderTemplate><ul class="roommateList"></HeaderTemplate>
+            <ItemTemplate>
+                <li>Invited <asp:Literal ID="ltlInvitedName" runat="server" /></li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+    </asp:Panel>
 </asp:Panel>
 <asp:Panel ID="panelCommuter" runat="server" CssClass="pSection">
     <p>Our records indicate that you are currently a commuter. If you are interested in Carthage housing, please contact Nina Fleming at <a href="mailto:nfleming@carthage.edu">nfleming@carthage.edu</a>
@@ -47,9 +59,17 @@
     <asp:Panel ID="panelInvitations" runat="server">
         You have been invited to select the following room(s):
         <asp:Repeater ID="repeaterInvites" runat="server" OnItemDataBound="repeaterInvites_ItemDataBound">
-            <HeaderTemplate><ul></HeaderTemplate>
+            <HeaderTemplate><ul class="roommateList"></HeaderTemplate>
             <ItemTemplate>
                 <li><asp:Literal ID="ltlInvite" runat="server" /><asp:Button ID="btnRoomInvite" runat="server" /> (Invited by <asp:Literal ID="ltlInviteBy" runat="server" />)</li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+
+        <asp:Repeater ID="repeaterInvitesReadOnly" runat="server">
+            <HeaderTemplate><ul class="roommateList"></HeaderTemplate>
+            <ItemTemplate>
+                <li><asp:Literal ID="ltlInvite" runat="server" /> (Invited by <asp:Literal ID="ltlInviteBy" runat="server" />)</li>
             </ItemTemplate>
             <FooterTemplate></ul></FooterTemplate>
         </asp:Repeater>
@@ -59,7 +79,7 @@
     <asp:Panel ID="panelExtendedInvitations" runat="server">
         You have extended the following invitation(s):
         <asp:Repeater ID="repeaterExtendedInvites" runat="server" OnItemDataBound="repeaterExtendedInvites_ItemDataBound">
-            <HeaderTemplate><ul></HeaderTemplate>
+            <HeaderTemplate><ul class="roommateList"></HeaderTemplate>
             <ItemTemplate>
                 <li>Invited <asp:Literal ID="ltlInvitedName" runat="server" /></li>
             </ItemTemplate>

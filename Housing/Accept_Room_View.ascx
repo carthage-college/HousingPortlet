@@ -49,9 +49,9 @@ each term. The only exception to this is J-Term. The campus does not close betwe
 end of J-Term and the beginning of Term II. The campus will be closed for the following 
 breaks:
 
-    Thanksgiving November 20 after 6:00 p.m. through November 29, <asp:Literal ID="ltlThisYear1" runat="server" /> at noon
-    Christmas December 18, <asp:Literal ID="ltlThisYear2" runat="server" /> after 6:00 p.m. through January 4, <asp:Literal ID="ltlNextYear1" runat="server" /> at noon
-    Spring Break March 18, after 6:00 p.m. through March 27, <asp:Literal ID="ltlNextYear2" runat="server" /> at noon
+    Thanksgiving November 18 after 6:00 p.m. through November 27, <asp:Literal ID="ltlThisYear1" runat="server" /> at noon
+    Christmas December 16, <asp:Literal ID="ltlThisYear2" runat="server" /> after 6:00 p.m. through January 2, <asp:Literal ID="ltlNextYear1" runat="server" /> at noon
+    Spring Break March 17, after 6:00 p.m. through March 26, <asp:Literal ID="ltlNextYear2" runat="server" /> at noon
 
 The student shall remove all personal possessions from their assigned space upon 
 termination of residence for any reason. All such personal possessions not removed will 
@@ -94,12 +94,12 @@ classes will automatically lose their assigned space.
 RULES AND REGULATIONS
 Carthage reserves the right for its authorized personnel to enter student rooms to preserve 
 and protect Carthage property and to assure compliance with state and local laws or 
-Carthage rules and regulations. In signing this contract, the student agrees to adhere to 
-all rules and regulations governing his/her behavior as outlined in the Carthage Student 
+Carthage rules and regulations. In signing this contract, the student agrees to adhere to all 
+rules and regulations governing his/her behavior as outlined in the Carthage Student 
 Community Code. 
 
 PAYMENTS
-All payments hereunder shall be made to the Business Office
+All payments hereunder shall be made to the Business Office.
 ###############################################################################
 </pre>
 

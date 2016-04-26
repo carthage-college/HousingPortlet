@@ -17,8 +17,14 @@ namespace Housing
         public override string ViewName { get { return "Housing Sign-up Application"; } }
 
         #region Public Members
+        //Database connections
         OdbcConnectionClass3 odbcConn = new OdbcConnectionClass3("ERPDataConnection.config");
-        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
+        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
+        
+        //Library of helper functions
+        HousingHelper helper = new HousingHelper();
+
+        //Constants
         public string SESSION_SPRING { get { return "RC"; } }
         public string SESSION_FALL { get { return "RA"; } }
         public string CurrentYear { get { return DateTime.Now.Year.ToString(); } }
@@ -37,7 +43,7 @@ namespace Housing
         {
             get
             {
-                string CONFIG_END_TIME = GetHousingSetting("END_TIME");
+                string CONFIG_END_TIME = helper.GetHousingSetting(HousingHelper.SETTING_KEY_END_HOUR);
                 int endTime = 0;
                 if (!int.TryParse(CONFIG_END_TIME, out endTime))
                 {
@@ -76,6 +82,7 @@ namespace Housing
             //If the DataRow object is null, the student has not yet signed up for a room
             bool isRegisteredForHousing = drUpcomingHousing != null;
 
+            //Retrieve invitations extended by this student
             GetExtendedInvitations();
 
             bool isCommuter = studentIsCommuter(drCxData);
@@ -159,7 +166,10 @@ namespace Housing
                 bool mayRegister = isFallRegistered && !isCommuter && !hasHold && hasDefinedGender;
 
                 this.panelAvailability.Visible = !isRegisteredForHousing;
-                this.lnkAvailability.Visible = isValidTime && mayRegister;
+
+                //Only limit access to availability screens in production
+                this.lnkAvailability.Visible = helper.IS_PRODUCTION ? isValidTime && mayRegister : true;
+
                 this.ltlCannotRegister.Visible = isValidTime && !mayRegister;
                 this.panelOverview.Visible = !isValidTime;
                 //If it is not the student's time to sign up for a room, calculate when their signup time begins
@@ -177,7 +187,7 @@ namespace Housing
                 {
                     if (drCxData != null)
                     {
-                        DataTable dtInvitations = GetInvitations(drCxData["sex"].ToString());
+                        DataTable dtInvitations = GetInvitations(drCxData["sex"].ToString(), mayRegister);
                     }
                 }
                 //If the student has signed up for housing, display their roommates
@@ -192,7 +202,7 @@ namespace Housing
                 //Suppress the display of all the various responsive components of the page
                 this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
                     this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
-                
+
                 //Initialize message to be displayed
                 string noSignupMessage = "";
 
@@ -236,6 +246,19 @@ namespace Housing
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, "We were unable to retrieve your information. Please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a> to resolve this issue.");
             }
             */
+            if (!helper.IS_PRODUCTION)
+            {
+                bool isProduction = false;
+                bool.TryParse(helper.GetHousingSetting(HousingHelper.SETTING_KEY_IS_PRODUCTION), out isProduction);
+
+                bool sendEmail = false;
+                bool.TryParse(helper.GetHousingSetting(HousingHelper.SETTING_KEY_SEND_EMAIL), out sendEmail);
+
+                string emailTo = helper.GetHousingSetting(HousingHelper.SETTING_KEY_TEST_EMAIL_ADDRESS);
+                string msg = String.Format("Found the following:<br />Is production: {0}<br />Send email: {1}<br />Email to: {2}<br />Email determination: {3}", isProduction.ToString(), sendEmail.ToString(), emailTo, (helper.sendEmailOk() ? "Okay to email students" : "Only email admins"));
+
+                this.ParentPortlet.ShowFeedback(FeedbackType.Message, msg);
+            }
         }
 
         protected void lnkAvailability_Click(object sender, EventArgs e)
@@ -252,27 +275,7 @@ namespace Housing
 
         private void GetRoommates(string roomSessionID)
         {
-            string roommatesSQL = @"
-                SELECT
-                    FU.FirstName, FU.LastName
-                FROM
-                    CUS_Housing_RoomStudent HRStu   INNER JOIN  CUS_Housing_RoomSession HRS ON  HRStu.RoomSessionID				=   HRS.RoomSessionID
-                                                    INNER JOIN  FWK_User                FU  ON  HRStu.StudentID					=   FU.ID
-													INNER JOIN	CUS_Housing_Room		HR	ON	HRS.RoomID						=	HR.RoomID
-													INNER JOIN
-													(
-														SELECT
-															HR.BuildingID, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly
-														FROM
-															CUS_Housing_RoomSession	HRSsub	INNER JOIN	CUS_Housing_Room	HR	ON	HRSsub.RoomID	    =	HR.RoomID
-																																AND	HRSsub.HousingYear	=	YEAR(GETDATE())
-														WHERE
-															RoomSessionID =   ?
-													)									HR2	ON	HR.BuildingID					=	HR2.BuildingID
-																							AND	SUBSTRING(HR.RoomNumber, 1, 3)	=	HR2.RoomNumberOnly
-                ORDER BY
-                    HRStu.RegistrationTime
-            ";
+            string roommatesSQL = "EXECUTE [dbo].[CUS_spHousing_getRoommates] @guidRoomSessionID = ?";
             Exception exRoommates = null;
             DataTable dtRoommates = null;
             List<OdbcParameter> roommatesParam = new List<OdbcParameter>
@@ -302,8 +305,8 @@ namespace Housing
         {
             string studentSQL = String.Format(@"
                     SELECT
-                        id_rec.id, TRIM(id_rec.firstname) AS firstname, TRIM(id_rec.lastname) AS lastname, profile_rec.sex, ROUND(NVL(stu_stat_rec.cum_earn_hrs, 0)) AS career_hours, TRIM(NVL(curbldg.txt,'')) AS bldg,
-                        TRIM(NVL(stu_serv_rec.room,'')) AS room, NVL(stu_acad_rec.reg_hrs, 0) AS registered_hours, NVL(ADVpay.hld,'') AS advpayhold, NVL(UNBal.hld,'') AS unbal_hold,
+                        id_rec.id, TRIM(id_rec.firstname) AS firstname, TRIM(id_rec.lastname) AS lastname, profile_rec.sex, ROUND(NVL(stu_stat_rec.cum_earn_hrs, 0)) AS career_hours, TRIM(NVL(curbldg.txt,'CMTR')) AS bldg,
+                        TRIM(NVL(stu_serv_rec.room,'CMTR')) AS room, NVL(stu_acad_rec.reg_hrs, 0) AS registered_hours, NVL(ADVpay.hld,'') AS advpayhold, NVL(UNBal.hld,'') AS unbal_hold,
                         NVL(invl_rec.invl,'') AS greekid, TRIM(NVL(invl_rec.org,'')) AS greek_name,
                         CASE	sprAcad.subprog
     	                    WHEN	'TRAD'	THEN	'UNDG'
@@ -312,16 +315,17 @@ namespace Housing
                         END	AS	include
                     FROM id_rec	INNER JOIN	profile_rec			        ON	id_rec.id			=	profile_rec.id
                                 LEFT JOIN	stu_stat_rec		        ON	id_rec.id			=	stu_stat_rec.id
+                                										AND	stu_stat_rec.prog	=	'UNDG'
                                 LEFT JOIN	stu_serv_rec		        ON	id_rec.id			=	stu_serv_rec.id
 											                            AND	stu_serv_rec.sess	=	?
 											                            AND	stu_serv_rec.yr		=	{0}
                                 LEFT JOIN   bldg_table      curbldg     ON  stu_serv_rec.bldg   =   curbldg.bldg
 			                    LEFT JOIN	stu_acad_rec		        ON	id_rec.id			=	stu_acad_rec.id
 											                            AND	stu_acad_rec.sess	=	?
-											                            AND	stu_acad_rec.yr		=	{1}
+											                            AND	stu_acad_rec.yr		=	{0}
 								LEFT JOIN	stu_acad_rec	sprAcad		ON	id_rec.id			=	sprAcad.id
 																		AND	sprAcad.sess		=	?
-																		AND	sprAcad.yr			=	{2}
+																		AND	sprAcad.yr			=	{0}
 			                    LEFT JOIN	hold_rec	    ADVpay	    ON	id_rec.id			=	ADVpay.id
 											                            AND	TODAY			BETWEEN	ADVpay.beg_date	AND	NVL(ADVpay.end_date, TODAY)
 											                            AND	ADVpay.hld			=	'APAY'
@@ -331,8 +335,9 @@ namespace Housing
                                 LEFT JOIN   involve_rec     invl_rec    ON  id_rec.id           =   invl_rec.id
                                                                         AND NVL(invl_rec.invl,'')    IN  ('','S007','S025','S045','S061','S063','S092','S141','S152','S165','S168','S189','S190','S192','S194','S276','S277')
                                                                         AND NVL(invl_rec.end_date, TODAY)   >=  TODAY
-                    WHERE id_rec.id	=	{3}
-                ", CurrentYear, CurrentYear, CurrentYear, UserID.ToString());
+                                                                        AND YEAR(invl_rec.beg_date)   =  {0}
+                    WHERE id_rec.id	=	{1}
+                ", CurrentYear, UserID.ToString());
 
             List<OdbcParameter> parameters = new List<OdbcParameter>
             {
@@ -372,23 +377,7 @@ namespace Housing
             generalStartDate = null;
 
             //Select start date for RAs (isRA = 1) and general student population (isRA = 0)
-            string getStartDateSQL = @"
-                SELECT
-                    startdate, 1 AS isRA
-                FROM
-                    CUS_HousingSelectionStartdate
-                WHERE
-                    id  =   1
-                UNION
-                SELECT
-                    startdate, 0 AS isRA
-                FROM
-                    CUS_HousingSelectionStartdate
-                WHERE
-                    id  =   2
-                ORDER BY
-                    isRA DESC
-            ";
+            string getStartDateSQL = "EXECUTE [dbo].[CUS_spHousing_getStartDates]";
             Exception exStartDate = null;
             DataTable dtStartDate = null;
 
@@ -413,34 +402,15 @@ namespace Housing
             return raStartDate.HasValue && generalStartDate.HasValue;
         }
 
-        private DataTable GetInvitations(string studentGender)
+        private DataTable GetInvitations(string studentGender, bool mayRegister)
         {
             //Get any invitations associated with the user
-            string invitationSQL = @"
-                SELECT
-	                HB.BuildingName, HR.RoomNumber, HRR.RoomSessionID,
-	                CASE
-		                WHEN	FU.ID	IS	NULL	THEN	''
-									                ELSE	FU.FirstName + ' ' + FU.LastName
-	                END	AS	InvitedBy
-                FROM
-	                CUS_Housing_RoomReservation	HRR	INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HRR.RoomSessionID	=	HRS.RoomSessionID
-																			                AND	HRS.HousingYear		=	YEAR(GETDATE())
-									                INNER JOIN	CUS_Housing_Room		HR	ON	HRS.RoomID			=	HR.RoomID
-									                INNER JOIN	CUS_Housing_Building	HB	ON	HR.BuildingID		=	HB.BuildingID
-									                LEFT JOIN	FWK_User				FU	ON	HRR.CreatedByID		=	FU.ID
-                WHERE
-	                HRR.StudentID	=	?
-                    AND
-                    HRS.Gender      IN  ('', ?)
-                ORDER BY
-	                HB.BuildingID, HR.RoomNumber
-            ";
+            string invitationSQL = "EXECUTE [dbo].[CUS_spHousing_getInvitations] @guidStudentID = ?, @strGender = ?";
             Exception exInvitation = null;
             DataTable dtInvitation = null;
             List<OdbcParameter> invitationParams = new List<OdbcParameter>
             {
-                  new OdbcParameter("StudentID", PortalUser.Current.Guid.ToString())
+                  new OdbcParameter("StudentID", PortalUser.Current.Guid)
                 , new OdbcParameter("StudentGender", studentGender)
             };
             try
@@ -450,8 +420,18 @@ namespace Housing
                 //If invitations exist for the user, bind the data to the repeater
                 if (dtInvitation != null && dtInvitation.Rows.Count > 0)
                 {
-                    this.repeaterInvites.DataSource = dtInvitation;
-                    this.repeaterInvites.DataBind();
+                    if (mayRegister)
+                    {
+                        this.repeaterInvites.DataSource = dtInvitation;
+                        this.repeaterInvites.DataBind();
+                    }
+                    else
+                    {
+                        this.repeaterInvitesReadOnly.DataSource = dtInvitation;
+                        this.repeaterInvitesReadOnly.DataBind();
+                    }
+                    this.repeaterInvites.Visible = mayRegister;
+                    this.repeaterInvitesReadOnly.Visible = !mayRegister;
                 }
                 else
                 {
@@ -472,23 +452,12 @@ namespace Housing
         /// <returns>DataTable dtExtendedInvite - contains Building Name, Room Number, RoomSessionID, Student ID (guid), First Name, and Last Name</returns>
         private DataTable GetExtendedInvitations()
         {
-            string extendedInviteSQL = @"
-                SELECT
-                    HB.BuildingName, HR.RoomNumber, HRR.RoomSessionID, HRR.StudentID, FU.FirstName, FU.LastName
-                FROM
-                    CUS_Housing_RoomReservation HRR INNER JOIN  FWK_User                FU  ON  HRR.StudentID       =   FU.ID
-                                                    INNER JOIN  CUS_Housing_RoomSession HRS ON  HRR.RoomSessionID   =   HRS.RoomSessionID
-                                                                                            AND HRS.HousingYear     =   YEAR(GETDATE())
-                                                    INNER JOIN  CUS_Housing_Room        HR  ON  HRS.RoomID          =   HR.RoomID
-                                                    INNER JOIN  CUS_Housing_Building    HB  ON  HR.BuildingID       =   HB.BuildingID
-                WHERE
-                    HRR.CreatedByID =   ?
-            ";
+            string extendedInviteSQL = "EXECUTE [dbo].[CUS_spHousing_getExtendedInvitations] @guidStudentID = ?";
             Exception exExtendedInvite = null;
             DataTable dtExtendedInvite = null;
             List<OdbcParameter> extendedInviteParams = new List<OdbcParameter>
             {
-                new OdbcParameter("StudentID", PortalUser.Current.Guid.ToString())
+                new OdbcParameter("StudentID", PortalUser.Current.Guid)
             };
 
             try
@@ -497,9 +466,17 @@ namespace Housing
                 if (exExtendedInvite != null) { throw exExtendedInvite; }
                 this.repeaterExtendedInvites.DataSource = dtExtendedInvite;
                 this.repeaterExtendedInvites.DataBind();
+
+                this.repeaterExtendedInvites2.DataSource = dtExtendedInvite;
+                this.repeaterExtendedInvites2.DataBind();
+
                 if (dtExtendedInvite == null || dtExtendedInvite.Rows.Count == 0)
                 {
                     this.panelExtendedInvitations.Visible = false;
+                }
+                else
+                {
+                    this.panelExtendedInvitations.Visible = true;
                 }
             }
             catch (Exception ex)
@@ -516,17 +493,7 @@ namespace Housing
         private DataRow GetUpcomingHousing()
         {
             //Check if the student has already signed up for a room in the current housing period
-            string upcomingHousingSQL = @"
-                SELECT
-                    HB.BuildingName, HR.RoomNumber, HRStu.RegistrationTime, HRStu.RoomSessionID
-                FROM
-                    CUS_Housing_Building    HB  INNER JOIN  CUS_Housing_Room        HR      ON  HB.BuildingID       =   HR.BuildingID
-                                                INNER JOIN  CUS_Housing_RoomSession HRS     ON  HR.RoomID           =   HRS.RoomID
-                                                                                            AND HRS.HousingYear     =   YEAR(GETDATE())
-                                                LEFT JOIN   CUS_Housing_RoomStudent HRStu   ON  HRS.RoomSessionID   =   HRStu.RoomSessionID
-                WHERE
-                    HRStu.StudentID =   ?
-            ";
+            string upcomingHousingSQL = "EXECUTE [dbo].[CUS_spHousing_isStudentInRoomByID] @guidStudentID = ?";
 
             //Initialize variables to execute query
             Exception exUpcomingHousing = null;
@@ -534,7 +501,7 @@ namespace Housing
             DataRow drUpcomingHousing = null;
             List<OdbcParameter> upcomingHousingParams = new List<OdbcParameter>
             {
-                new OdbcParameter("StudentID", PortalUser.Current.Guid.ToString())
+                new OdbcParameter("StudentID", PortalUser.Current.Guid)
             };
 
             try
@@ -788,55 +755,26 @@ namespace Housing
         private bool studentIsRA()
         {
             int[] arrayRA = {
-                                1313163,1245108,1362954,1382806,1334627,1381978,1253677,1392260,1360349,1396160,
-                                1326209,853586,1348991,1335444,1392091,1338427,1377417,1389396,1349912,1316931,
-                                1359544,1393681,1356926,1390994,1339127,1333211,1380321,1372750,1338766,1380442,
-                                1302343,1321415,1385261,1328382,1325094,1397143,1320805,1348908,1353112,1366791,
-                                1369894,1255003,1363112,798485,1352443,1388740,1343203,1299902,1367698,1366533,
-                                1359411,1358662,833023,1379393,1384058,1314645,1378875,1315014,1305909,1328822,
-                                1207964,1286565,1292888,1366157
+                                //2016 RA List
+                                1381978,1421978,1339127,1405988,1383296,1396160,1389751,1338341,1425939,1392260,
+                                1425650,1385927,1383799,1409414,1392996,1427269,1362600,1427013,1427991,1389046,
+                                1409586,1385027,1427196,1389396,1415363,1325094,1361489,1403984,1384091,1387527,
+                                1423490,1380442,1363736,1404734,1425627,1305016,1380321,1416008,1412101,1396941,
+                                1428007,1398715,1418195,1400663,1335444,1397143,1412177,1320805,1369894,1253677,
+                                1328822,1390994,1358662,
+                                //RA roommates sign up the same day as the RAs so we include their IDs as well
+                                1425977,1416751,1359246,1423115,1356365,1418198,1345259,1414334
+
+                                //2015 RA List
+                                //1313163,1245108,1362954,1382806,1334627,1381978,1253677,1392260,1360349,1396160,
+                                //1326209,853586,1348991,1335444,1392091,1338427,1377417,1389396,1349912,1316931,
+                                //1359544,1393681,1356926,1390994,1339127,1333211,1380321,1372750,1338766,1380442,
+                                //1302343,1321415,1385261,1328382,1325094,1397143,1320805,1348908,1353112,1366791,
+                                //1369894,1255003,1363112,798485,1352443,1388740,1343203,1299902,1367698,1366533,
+                                //1359411,1358662,833023,1379393,1384058,1314645,1378875,1315014,1305909,1328822,
+                                //1207964,1286565,1292888,1366157
                             };
             return arrayRA.Contains(UserID);
-        }
-
-        private string GetHousingSetting(string settingKey)
-        {
-            string settingSQL = String.Format(@"
-                SELECT
-                    SettingValue
-                FROM
-                    CUS_Housing_Settings
-                WHERE
-                    SettingKey  =   ?
-            ");
-
-            string settingValue = "";
-            Exception exSetting = null;
-            DataTable dtSetting = null;
-            List<OdbcParameter> settingParam = new List<OdbcParameter>
-            {
-                new OdbcParameter("SettingKey", settingKey)
-            };
-
-            try
-            {
-                dtSetting = jicsConn.ConnectToERP(settingSQL, ref exSetting, settingParam);
-                if (exSetting != null) { throw exSetting; }
-                if (dtSetting != null && dtSetting.Rows.Count > 0)
-                {
-                    settingValue = dtSetting.Rows[0]["SettingValue"].ToString();
-                }
-            }
-            catch (Exception ex)
-            {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Message, String.Format("{0}<br /><br />{1}", ex.Message, ex.InnerException));
-            }
-            return settingValue;
-        }
-
-        private void UpdateLogin()
-        {
-
         }
     }
 }

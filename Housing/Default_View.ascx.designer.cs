@@ -76,6 +76,24 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.BulletedList bulletedRoommates;
         
         /// <summary>
+        /// panelExtendedInvitations2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelExtendedInvitations2;
+        
+        /// <summary>
+        /// repeaterExtendedInvites2 control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repeaterExtendedInvites2;
+        
+        /// <summary>
         /// panelCommuter control.
         /// </summary>
         /// <remarks>
@@ -209,6 +227,15 @@ namespace Housing {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater repeaterInvites;
+        
+        /// <summary>
+        /// repeaterInvitesReadOnly control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repeaterInvitesReadOnly;
         
         /// <summary>
         /// panelExtendedInvitations control.

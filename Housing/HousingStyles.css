@@ -1,6 +1,6 @@
 ﻿ul.roommateList li {
     list-style-type:disc;
-    margin-left:40px;
+    margin:0px 0px 0px 40px;
 }
 
 ul.registrationOptions li {

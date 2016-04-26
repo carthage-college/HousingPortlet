@@ -14,7 +14,7 @@ namespace Housing
 {
     public partial class Availability_Building_View : PortletViewBase
     {
-        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config");
+        OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
         public override string ViewName { get { return "Choose A Building"; } }
 
         protected void Page_Load(object sender, EventArgs e)
@@ -33,112 +33,14 @@ namespace Housing
             try
             {
                 //Get RA rooms that are available based on the student's gender
-                string raSQL = @"
-                    SELECT
-		                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-	                FROM
-		                CUS_Housing_Building	HB	INNER JOIN	CUS_Housing_Room		HR	ON	HB.BuildingID	=	HR.BuildingID
-									                INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
-	                WHERE
-		                HRS.Gender		IN	('', ?)
-					AND
-						HR.IsRA			=	1
-	                GROUP BY
-		                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-	                ORDER BY
-		                HB.BuildingName
-                ";
+                string raSQL = "EXECUTE [dbo].[CUS_spHousing_getBuildingsRA] @strGender = ?";
 
                 //Get buildings that have available rooms based on the the student's greek affiliations or current room assignment
-//                string greekSquatterSQL = String.Format(@"
-//                    /* Select the greek rooms that correspond to the student's greek affiliation */
-//                    SELECT
-//	                    GreekBuildings.BuildingID, GreekBuildings.BuildingName, GreekBuildings.BuildingCode
-//                    FROM
-//	                    (
-//		                    SELECT
-//                                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-//		                    FROM
-//			                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB      ON  HR.BuildingID	    =   HB.BuildingID
-//									                    INNER JOIN	CUS_Housing_RoomSession     HRS     ON  HR.RoomID           =	HRS.RoomID
-//                                                                                                        AND	HRS.HousingYear 	=	YEAR(GETDATE())
-//									                    LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=   HRStu.RoomSessionID
-//									                    LEFT JOIN	CUS_HousingSelectionGreek	HSG	    ON	HRS.GreekID         =	HSG.greekid
-//                            WHERE
-//                                HRS.Gender	IN	(?,'')
-//                            AND
-//                                HSG.invl    =   ?
-//		                    GROUP BY
-//                                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-//	                    )	AS  GreekBuildings
-//                    UNION
-//                    /* Select the student's current room */
-//                    SELECT
-//                        HB.BuildingID, HB.BuildingName, HB.BuildingCode
-//                    FROM
-//	                    CUS_Housing_Room	HR  INNER JOIN  CUS_Housing_Building	    HB	    ON  HR.BuildingID	    =   HB.BuildingID
-//							                    INNER JOIN	CUS_Housing_RoomSession	    HRS	    ON	HR.RoomID	        =	HRS.RoomID
-//                                                                                                AND HRS.HousingYear     =	YEAR(GETDATE())
-//							                    INNER JOIN  CUS_Housing_SessionOccupant HSO     ON  HRS.RoomSessionID   =   HSO.RoomSessionID
-//							                    LEFT JOIN   CUS_Housing_RoomStudent     HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-//							                    INNER JOIN	FWK_User	                FU	    ON  HSO.StudentID	    =	FU.ID
-//                    WHERE
-//                        FU.HostID = {0}
-//                    ORDER BY
-//                        BuildingName
-//                ", PortalUser.Current.HostID);
-
-                string greekSquatterSQL = String.Format(@"
-                    SELECT
-	                    GreekBuildings.BuildingID, GreekBuildings.BuildingName, GreekBuildings.BuildingCode
-                    FROM
-	                    (
-		                    SELECT
-                                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-		                    FROM
-			                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB      ON  HR.BuildingID	    =   HB.BuildingID
-									                    INNER JOIN	CUS_Housing_RoomSession     HRS     ON  HR.RoomID           =	HRS.RoomID
-                                                                                                        AND	HRS.HousingYear 	=	YEAR(GETDATE())
-									                    LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=   HRStu.RoomSessionID
-									                    LEFT JOIN	CUS_HousingSelectionGreek	HSG	    ON	HRS.GreekID         =	HSG.greekid
-                            WHERE
-                                HRS.Gender	IN	('{0}','')
-                            AND
-                                HSG.invl    =   '{1}'
-		                    GROUP BY
-                                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-	                    )	AS  GreekBuildings
-                    UNION
-                    /* Select the student's current room */
-                    SELECT
-                        HB.BuildingID, HB.BuildingName, HB.BuildingCode
-                    FROM
-	                    CUS_Housing_Room	HR  INNER JOIN  CUS_Housing_Building	    HB	    ON  HR.BuildingID	    =   HB.BuildingID
-							                    INNER JOIN	CUS_Housing_RoomSession	    HRS	    ON	HR.RoomID	        =	HRS.RoomID
-                                                                                                AND HRS.HousingYear     =	YEAR(GETDATE())
-							                    INNER JOIN  CUS_Housing_SessionOccupant HSO     ON  HRS.RoomSessionID   =   HSO.RoomSessionID
-							                    LEFT JOIN   CUS_Housing_RoomStudent     HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-							                    INNER JOIN	FWK_User	                FU	    ON  HSO.StudentID	    =	FU.ID
-                    WHERE
-                        FU.HostID = {2}
-                    ORDER BY
-                        BuildingName
-                ", this.ParentPortlet.PortletViewState["Gender"].ToString(), this.ParentPortlet.PortletViewState["GreekID"].ToString(), PortalUser.Current.HostID);
+                string greekSquatterSQL = "EXECUTE [dbo].[CUS_spHousing_getBuildingsGreekSquatter] @strGender = ?, @strGreekOrg = ?, @guidStudentID = ?";
 
                 //Get the building information
-                string buildingSQL = @"
-                    SELECT
-		                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-	                FROM
-		                CUS_Housing_Building	HB	INNER JOIN	CUS_Housing_Room		HR	ON	HB.BuildingID	=	HR.BuildingID
-									                INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
-	                WHERE
-		                HRS.Gender		IN	('', ?)
-	                GROUP BY
-		                HB.BuildingID, HB.BuildingName, HB.BuildingCode
-	                ORDER BY
-		                HB.BuildingName
-                ";
+                string buildingSQL = "EXECUTE [dbo].[CUS_spHousing_getBuildings] @strGender = ?";
+
                 List<OdbcParameter> parameters = new List<OdbcParameter>
                 {
                     new OdbcParameter("StudentGender", this.ParentPortlet.PortletViewState["Gender"].ToString())
@@ -152,6 +54,7 @@ namespace Housing
                 {
                     buildingSQL = greekSquatterSQL;
                     parameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
+                    parameters.Add(new OdbcParameter("StudentID", PortalUser.Current.Guid));
                 }
 
                 //Perform the query
@@ -170,9 +73,6 @@ namespace Housing
                     this.bulletedBuildings.DataValueField = "BuildingID";
                     this.bulletedBuildings.DataBind();
                 }
-                //this.ParentPortlet.ShowFeedback(FeedbackType.Message,
-                //    String.Format("{0}<br /><br />Gender: |{2}|<br />Greek Invl: |{1}|<br />dtBuilding: {3}",
-                //    buildingSQL, this.ParentPortlet.PortletViewState["GreekID"].ToString(), this.ParentPortlet.PortletViewState["Gender"].ToString(), (dtBuilding == null).ToString()));
             }
             catch(Exception ex)
             {

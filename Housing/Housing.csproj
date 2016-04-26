@@ -94,6 +94,7 @@
     <Compile Include="Default_View.ascx.designer.cs">
       <DependentUpon>Default_View.ascx</DependentUpon>
     </Compile>
+    <Compile Include="HousingHelper.cs" />
     <Compile Include="HousingMain.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Send_Invitations_View.ascx.cs">

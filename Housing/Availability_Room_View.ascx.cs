@@ -54,7 +54,7 @@ namespace Housing
             string buildingID = this.ParentPortlet.PortletViewState["Building"].ToString();
 
             //Find the name of the building selected by the user on the previous page
-            string buildingSQL = "SELECT BuildingName FROM CUS_Housing_Building WHERE BuildingID = ?";
+            string buildingSQL = "EXECUTE [dbo].[CUS_spHousing_getBuildingByID] @guidBuildingID = ?";
             //Initialize variables that will process results from the query
             Exception ex = null;
             DataTable dtBuilding = null;
@@ -86,214 +86,19 @@ namespace Housing
             }
 
             //Params: [0] = BuildingID, [1] = Gender
-            string raRoomSQL = @"
-                SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity, COUNT(HRStu.RoomStudentID) AS Occupancy
-                FROM
-                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	HB		ON  HR.BuildingID		=   HB.BuildingID
-								            INNER JOIN	CUS_Housing_RoomSession	HRS		ON	HR.RoomID			=	HRS.RoomID
-																						AND	HRS.HousingYear		=	YEAR(GETDATE())
-											LEFT JOIN	CUS_Housing_RoomStudent	HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-                WHERE
-                    HR.BuildingID	=   ?
-		            AND
-		            HRS.Gender		IN	(?,'')
-                    AND
-                    HR.Capacity     >   0
-                    AND
-                    HR.IsRA         =   1
-                GROUP BY
-					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
-                ORDER BY
-		            HR.RoomNumber";
+            string raRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsStandard] @guidBuildingID = ?, @strGender = ?, @bitIsRA = 1";
 
             // Params: [0] = GreekID (invl_table.invl), [1] = Gender, [2] = StudentID
-            string greekSquatterSQL = String.Format(@"
-                SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy,
-					CASE RIGHT(HR.RoomNumber, 1)
-						WHEN	'A'	THEN	1
-						WHEN	'B'	THEN	1
-									ELSE	0
-					END	AS IsSuite, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly,
-					CASE RIGHT(HR.RoomNumber,1)
-						WHEN	'A'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
-						WHEN	'B'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
-									ELSE	''
-					END AS RoomID1, '' AS RoomID2
-                FROM
-                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB		ON  HR.BuildingID		=   HB.BuildingID
-								            INNER JOIN	CUS_Housing_RoomSession	    HRS		ON	HR.RoomID			=	HRS.RoomID
-																						    AND	HRS.HousingYear		=	YEAR(GETDATE())
-											LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-                                            LEFT JOIN	CUS_HousingSelectionGreek	HSG		ON	HRS.GreekID			=	HSG.greekid
-                WHERE
-                    HSG.invl     	=   ?
-		            AND
-		            HRS.Gender		IN	(?,'')
-                    AND
-                    HR.[Capacity]   >   0
-                GROUP BY
-					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
-                UNION
-                SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.[Wing], HR.[Capacity], COUNT(HRStu.RoomStudentID) AS Occupancy,
-					CASE RIGHT(HR.RoomNumber, 1)
-						WHEN	'A'	THEN	1
-						WHEN	'B'	THEN	1
-									ELSE	0
-					END	AS IsSuite, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly,
-					CASE RIGHT(HR.RoomNumber,1)
-						WHEN	'A'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
-						WHEN	'B'	THEN	CAST(HRS.RoomSessionID AS VARCHAR(64))
-									ELSE	''
-					END AS RoomID1, '' AS RoomID2
-                FROM
-                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	    HB		ON  HR.BuildingID		=   HB.BuildingID
-								            INNER JOIN	CUS_Housing_RoomSession	    HRS		ON	HR.RoomID			=	HRS.RoomID
-																					    	AND	HRS.HousingYear		=	YEAR(GETDATE())
-                                            INNER JOIN  CUS_Housing_SessionOccupant HSO     ON  HRS.RoomSessionID   =   HSO.RoomSessionID
-											LEFT JOIN	CUS_Housing_RoomStudent	    HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-                                            INNER JOIN  FWK_User                    FU      ON  HSO.StudentID       =   FU.ID
-                WHERE
-                    FU.HostID       =   {0}
-                    AND
-                    HR.[Capacity]   >   0
-                GROUP BY
-					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
-                ORDER BY
-		            HR.RoomNumber
-            ", PortalUser.Current.HostID);
+            string greekSquatterSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsGreekSquatter] @strGreekID = ?, @strGender = ?, @guidStudentID = ?, @guidBuildingID = ?";
 
             //Params: [0] = BuildingID, [1] = Gender
-            string standardRoomSQL = @"
-                SELECT
-                    HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity, COUNT(HRStu.RoomStudentID) AS Occupancy
-                FROM
-                    CUS_Housing_Room	HR	INNER JOIN  CUS_Housing_Building	HB		ON  HR.BuildingID		=   HB.BuildingID
-								            INNER JOIN	CUS_Housing_RoomSession	HRS		ON	HR.RoomID			=	HRS.RoomID
-																						AND	HRS.HousingYear		=	YEAR(GETDATE())
-											LEFT JOIN	CUS_Housing_RoomStudent	HRStu	ON	HRS.RoomSessionID	=	HRStu.RoomSessionID
-                WHERE
-                    HR.BuildingID	=   ?
-		            AND
-		            HRS.Gender		IN	(?,'')
-                    AND
-                    HR.Capacity     >   0
-                GROUP BY
-					HB.BuildingCode, HRS.RoomSessionID, HR.RoomNumber, HR.[Floor], HR.Wing, HR.Capacity
-                ORDER BY
-		            HR.RoomNumber";
+            string standardRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsStandard] @guidBuildingID = ?, @strGender = ?";
 
             //Params: [0] = BuildingID, [1] = Gender
-            string oaksRoomSQL = @"
-                SELECT
-	                B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, SUM(SubRoom.Capacity) AS Capacity, COUNT(HRS.RoomStudentID) AS Occupancy,
-	                CASE
-		                WHEN	SubRoom.Capacity = 1	THEN	1
-										                ELSE	0
-	                END AS IsSuite,
-	                (
-		                SELECT TOP 1
-			                HRSsub.RoomSessionID
-		                FROM
-			                CUS_Housing_Room	Rsub	INNER JOIN	CUS_Housing_RoomSession	HRSsub	ON	Rsub.RoomID			=	HRSsub.RoomID
-																					                AND	HRSsub.HousingYear	=	YEAR(GETDATE())
-		                WHERE
-			                Rsub.BuildingID						=	B.BuildingID
-			                AND
-			                SUBSTRING(Rsub.RoomNumber, 1, 3)	=	SubRoom.RoomNumberOnly
-		                ORDER BY
-			                Rsub.RoomNumber
-	                )	AS	RoomID1,
-	                (
-		                SELECT TOP 1
-			                HRSsub.RoomSessionID
-		                FROM
-			                CUS_Housing_Room	Rsub	INNER JOIN	CUS_Housing_RoomSession	HRSsub	ON	Rsub.RoomID	=	HRSsub.RoomID
-																					                AND	HRSsub.HousingYear	=	YEAR(GETDATE())
-		                WHERE
-			                Rsub.BuildingID	=	B.BuildingID
-			                AND
-			                SUBSTRING(Rsub.RoomNumber, 1, 3)	=	SubRoom.RoomNumberOnly
-		                ORDER BY
-			                Rsub.RoomNumber	DESC
-	                )	AS	RoomID2
-                FROM
-	                CUS_Housing_Building	B	INNER JOIN	(
-												                SELECT
-													                HR.BuildingID, HR.RoomNumber, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly, HR.[Floor], HR.Wing, HR.Capacity, HRS.RoomSessionID, HRS.Gender
-												                FROM
-													                CUS_Housing_Room	HR	INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
-																													                AND	HRS.HousingYear	=	YEAR(GETDATE())
-												                WHERE
-													                HR.BuildingID	=	?
-											                )						SubRoom	ON	B.BuildingID			=	SubRoom.BuildingID
-								                LEFT JOIN	CUS_Housing_RoomStudent	HRS		ON	SubRoom.RoomSessionID	=	HRS.RoomSessionID
-                WHERE
-	                SubRoom.Gender		IN	(?,'')
-                    AND
-                    SubRoom.Capacity    >   0
-                GROUP BY
-	                B.BuildingID, B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, Capacity
-                ORDER BY
-	                Subroom.RoomNumberOnly";
+            string oaksRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsOaks] @guidBuildingID = ?, @strGender = ?";
 
             //Params: [0] = BuildingID, [1] = Gender
-            string oaksRARoomSQL = @"
-                SELECT
-	                B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, SUM(SubRoom.Capacity) AS Capacity, COUNT(HRS.RoomStudentID) AS Occupancy,
-	                CASE
-		                WHEN	SubRoom.Capacity = 1	THEN	1
-										                ELSE	0
-	                END AS IsSuite,
-	                (
-		                SELECT TOP 1
-			                HRSsub.RoomSessionID
-		                FROM
-			                CUS_Housing_Room	Rsub	INNER JOIN	CUS_Housing_RoomSession	HRSsub	ON	Rsub.RoomID			=	HRSsub.RoomID
-																					                AND	HRSsub.HousingYear	=	YEAR(GETDATE())
-		                WHERE
-			                Rsub.BuildingID						=	B.BuildingID
-			                AND
-			                SUBSTRING(Rsub.RoomNumber, 1, 3)	=	SubRoom.RoomNumberOnly
-		                ORDER BY
-			                Rsub.RoomNumber
-	                )	AS	RoomID1,
-	                (
-		                SELECT TOP 1
-			                HRSsub.RoomSessionID
-		                FROM
-			                CUS_Housing_Room	Rsub	INNER JOIN	CUS_Housing_RoomSession	HRSsub	ON	Rsub.RoomID	=	HRSsub.RoomID
-																					                AND	HRSsub.HousingYear	=	YEAR(GETDATE())
-		                WHERE
-			                Rsub.BuildingID	=	B.BuildingID
-			                AND
-			                SUBSTRING(Rsub.RoomNumber, 1, 3)	=	SubRoom.RoomNumberOnly
-		                ORDER BY
-			                Rsub.RoomNumber	DESC
-	                )	AS	RoomID2
-                FROM
-	                CUS_Housing_Building	B	INNER JOIN	(
-												                SELECT
-													                HR.BuildingID, HR.RoomNumber, SUBSTRING(HR.RoomNumber, 1, 3) AS RoomNumberOnly, HR.[Floor], HR.Wing, HR.Capacity, HRS.RoomSessionID, HRS.Gender, HR.isRA
-												                FROM
-													                CUS_Housing_Room	HR	INNER JOIN	CUS_Housing_RoomSession	HRS	ON	HR.RoomID		=	HRS.RoomID
-																													                AND	HRS.HousingYear	=	YEAR(GETDATE())
-												                WHERE
-													                HR.BuildingID	=	?
-											                )						SubRoom	ON	B.BuildingID			=	SubRoom.BuildingID
-								                LEFT JOIN	CUS_Housing_RoomStudent	HRS		ON	SubRoom.RoomSessionID	=	HRS.RoomSessionID
-                WHERE
-	                SubRoom.Gender		IN	(?,'')
-                    AND
-                    SubRoom.Capacity    >   0
-                    AND
-                    SubRoom.isRA        =   1
-                GROUP BY
-	                B.BuildingID, B.BuildingCode, SubRoom.RoomNumberOnly, SubRoom.[Floor], SubRoom.Wing, Capacity
-                ORDER BY
-	                Subroom.RoomNumberOnly"; 
+            string oaksRARoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsOaks] @guidBuildingID = ?, @strGender = ?, @bitIsRA = 1";
             
             ex = null;
             DataTable dtRooms = null;
@@ -306,12 +111,13 @@ namespace Housing
             List<OdbcParameter> roomParameters = new List<OdbcParameter>();
 
             //If it is greek/squatter signup day
-            //if (dayIndex == 0)
             if(IsTodayGreekSquatter)
             {
                 //Pass parameters for greek organization and student/room gender
                 roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
                 roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
+                roomParameters.Add(new OdbcParameter("StudentID", PortalUser.Current.Guid));
+                roomParameters.Add(new OdbcParameter("BuildingID", buildingID));
             }
             //If today is RA signup or a valid general student signup day
             else if (isTodayRA || (dayIndex > 0 && dayIndex < 4))
@@ -439,16 +245,7 @@ namespace Housing
 
             if (RoomSessionID != "")
             {
-                string invitationSQL = @"
-                    SELECT
-                        HRR.StudentID, FU.FirstName, FU.LastName
-                    FROM
-                        CUS_Housing_RoomReservation HRR INNER JOIN  FWK_User    FU  ON  HRR.StudentID   =   FU.ID
-                    WHERE
-                        HRR.RoomSessionID   =   ?
-                    ORDER BY
-                        HRR.ReservationTime
-                ";
+                string invitationSQL = "EXECUTE [dbo].[CUS_spHousing_getInvitationBedDisplay] @guidRoomSessionID = ?";
                 Exception exInvitation = null;
                 DataTable dtInvitation = null;
                 List<OdbcParameter> paramInvite = new List<OdbcParameter> { new OdbcParameter("RoomSessionID", RoomSessionID) };
@@ -464,14 +261,7 @@ namespace Housing
                 }
 
                 //Define SQL to get name details about the occupant
-                string getOccupantSQL = @"
-                    SELECT
-                        U.FirstName, U.LastName
-                    FROM
-                        CUS_Housing_RoomStudent HRStu   INNER JOIN  FWK_User    U   ON  HRStu.StudentID =   U.ID
-                    WHERE
-                        HRStu.RoomSessionID =   ?
-                ";
+                string getOccupantSQL = "EXECUTE [dbo].[CUS_spHousing_getStudentNamesByRoom] @guidRoomSessionID = ?";
 
                 //Define parameter for query
                 List<OdbcParameter> paramBed = new List<OdbcParameter> { new OdbcParameter("bedRoomSessionID", RoomSessionID) };
@@ -501,12 +291,15 @@ namespace Housing
                         btnBed.Text = String.Format("Bed {0}", BedIndex);
 
                         //The label for the button is the name of the invitee or the bed number/letter.
-                        if (dtInvitation != null && dtInvitation.Rows.Count >= bedNumber)
+                        //if (dtInvitation != null && (dtInvitation.Rows.Count >= bedNumber || (!bedIsNumber && dtInvitation.Rows.Count > 0)))
+                        int adjustedBedIndex = bedIsNumber ? bedNumber - (1 + dtBed.Rows.Count) : 0;
+                        if (dtInvitation != null && dtInvitation.Rows.Count > adjustedBedIndex)
                         {
                             btnBed.CssClass += " bedReserved";
-                            btnBed.Text = String.Format("{0} {1} invited", dtInvitation.Rows[bedNumber - 1]["FirstName"].ToString(), dtInvitation.Rows[bedNumber - 1]["LastName"].ToString());
+                            //If a bed is in a suite (bed is not a number) there will only be one record in the invitation DataTable.
+                            //Otherwise the bed index needs to be decreased by (1 + room occupants) to get the correct position.
+                            btnBed.Text = String.Format("{0} {1} invited", dtInvitation.Rows[adjustedBedIndex]["FirstName"].ToString(), dtInvitation.Rows[adjustedBedIndex]["LastName"].ToString());
                         }
-
                         returnObj = btnBed;
                     }
                     else

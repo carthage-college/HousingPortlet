@@ -24,6 +24,8 @@ namespace Housing
         //The ConnectToERP() method in OdbcConnectionClass3 checks the beginning of the SQL string and if it does not begin with "SELECT", the class does not send the results of the query to the DataTable.
         //The only way to force this behavior is to set the second argument of the constructor (bool? forceSelect) to "true".
         public OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
+
+        public HousingHelper helper = new HousingHelper();
         public string CurrentYear { get { return DateTime.Now.Year.ToString(); } }
         public string NextYear { get { return (int.Parse(CurrentYear) + 1).ToString(); } }
         public string AcademicYear { get { return String.Format("{0} - {1}", CurrentYear, NextYear); } }
@@ -50,15 +52,7 @@ namespace Housing
             this.ltlNextYear1.Text = this.ltlNextYear2.Text = NextYear;
 
             //Get information about the selected room
-            string roomSQL = @"
-                SELECT
-                    Building.BuildingName, Building.BuildingCode, Room.RoomNumber
-                FROM
-                    CUS_Housing_Room    Room    INNER JOIN  CUS_Housing_Building    Building    ON  Room.BuildingID         =   Building.BuildingID
-                                                INNER JOIN  CUS_Housing_RoomSession RoomSession ON  Room.RoomID             =   RoomSession.RoomID
-                                                                                                AND RoomSession.HousingYear =   YEAR(GETDATE())
-                WHERE
-                    RoomSession.RoomSessionID   =   ?";
+            string roomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomDetails] @guidRoomSessionID = ?";
             Exception ex = null;
             DataTable dtRoom = null;
             
@@ -136,30 +130,17 @@ namespace Housing
                     if (responseCode == 0)
                     {
                         //Get information about the selected room
-                        string roomSQL = @"
-                            SELECT
-                                HB.BuildingName, HB.BuildingCode, HR.RoomNumber, HRS.Gender,
-                                (
-                                    SELECT
-                                        COUNT(*)
-                                    FROM
-                                        CUS_Housing_RoomStudent HRStu
-                                    WHERE
-                                        HRStu.RoomSessionID =   HRS.RoomSessionID
-                                )   AS  NewOccupants
-                            FROM
-                                CUS_Housing_Room    HR  INNER JOIN  CUS_Housing_Building    HB  ON  HR.BuildingID   =   HB.BuildingID
-                                                        INNER JOIN  CUS_Housing_RoomSession HRS ON  HR.RoomID       =   HRS.RoomID
-                                                                                                AND HRS.HousingYear =   YEAR(GETDATE())
-                            WHERE
-                                HRS.RoomSessionID   =   ?";
+                        string roomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomDetails] @guidRoomSessionID = ?";
                         Exception ex = null;
                         DataTable dtRoom = null;
 
                         string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
                         PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
                         smtpAddress = Email.GetProperEMailAddress(emailSender.EmailAddress);
-                        string emailTo = PortalUser.Current.EmailAddress, emailSubject = "Room Registration";
+                        string emailSubject = "Room Registration";
+
+                        //If the database settings indicate we can send to students, do so. Otherwise we are in test mode and the admin should receive the email.
+                        string emailTo = helper.sendEmailOk() ? PortalUser.Current.EmailAddress : helper.GetHousingSetting(HousingHelper.SETTING_KEY_TEST_EMAIL_ADDRESS);
 
                         List<OdbcParameter> parameters = new List<OdbcParameter>
                         {
@@ -177,9 +158,48 @@ namespace Housing
                             string emailBody = String.Format(
                                 @"<p>Congratulations {0}, your reservation for {1} has been entered into our database.</p>
                                     <p>If you have any questions pertaining to your housing for the {2} academic year please contact the Office of Student Life in the Todd Wehr Center.</p>
-                                    <p>Thank you for using the Housing Selection Process for {3}.</p>"
-                            , PortalUser.Current.FirstName, formattedRoom, AcademicYear, AcademicYear
-                            );
+                                    <p>Thank you for using the Housing Selection Process for {2}.</p>
+                                    <p>##########</p>
+                                    <p>CARTHAGE COLLEGE<br />HOUSING CONTRACT FOR RESIDENCE HALLS<br />ACADEMIC YEAR {2}</p>
+                                    <p>RETURNING STUDENTS<br />
+                                    Carthage agrees to provide assigned space in the residence halls for the undersigned student for the {2} academic year and the undersigned student agrees to pay for 
+                                    said unassigned living space on the following terms:</p>
+                                    <p>DURATION<br />
+                                    This contract shall be for three (3) consecutive terms of the academic year including Term I, J-Term, and Term II. The student shall be entitled to reside in the halls
+                                    starting twenty-four (24) hours before classes begin and ending immediately after the final exam each term. The only exception to this is J-Term. The campus does not
+                                    close between the end of J-Term and the beginning of Term II. The campus will be closed for the following breaks:</p>
+                                    <blockquote>
+                                        Thanksgiving - November 18 after 6:00 p.m. through November 27, 2016 at noon<br />
+                                        Christmas - December 16, 2016 after 6:00 p.m. through January 2, 2017 at noon<br />
+                                        Spring Break - March 17, after 6:00 p.m. through March 26, 2017 at noon
+                                    </blockquote>
+                                    <p>The student shall remove all personal possessions from their assigned space upon termination of residence for any reason. All such personal possessions not removed will
+                                    be disposed of by Carthage and a cleaning fee assessed to the student.</p>
+                                    <p>TERMS<br />
+                                    A student must be registered full time to reside in the residence halls during any semester. This equates to a minimum of twelve (12) credits each term, and a minimum of
+                                    four (4) credits during J-Term, to be eligible to live in the residence halls. Exception to the above may be made by the Dean of Students.</p>
+                                    <p>CHARGES<br />
+                                    The per term charges for rooms will be determined by Carthage at a later date. Carthage reserves the right to change the amount of charge at any time. All students living on
+                                    campus are required to take a meal plan.</p>
+                                    <p>COMMUNITY CHARGES<br />
+                                    If damages or vandalism occur and no individual(s) is directly identified as being responsible, the cost of repairs will be equally charged to the members of that wing, floor,
+                                    building or group of people most closely related to the damages. These charges will be placed on the student’s monthly statement from Carthage.</p>
+                                    <p>ADJUSTMENTS<br />
+                                    No refund of room charges shall be made when a student withdraws, is dismissed from Carthage, or is removed from housing for disciplinary reasons.</p>
+                                    <p>UNASSIGNED LIVING SPACE<br />
+                                    The contract does not constitute a guarantee for a specific room or roommate. Carthage reserves the right to make any changes in room or roommate assignments at any time.</p>
+                                    <p>EFFECTIVE DATE<br />
+                                    This contract becomes binding (1) when the student pays applicable advance payment and (2) completes the on-line housing selection process. It continues for the academic
+                                    year as long as the student remains in good standing with Carthage.</p>
+                                    <p>NO SHOWS<br />
+                                    Any student who does not report to their assigned living space 24 hours after the start of classes will automatically lose their assigned space.</p>
+                                    <p>RULES AND REGULATIONS<br />
+                                    Carthage reserves the right for its authorized personnel to enter student rooms to preserve and protect Carthage property and to assure compliance with state and local
+                                    laws or Carthage rules and regulations. In signing this contract, the student agrees to adhere to all rules and regulations governing his/her behavior as outlined in the
+                                    Carthage Student Community Code.</p>
+                                    <p>PAYMENTS<br />
+                                    All payments hereunder shall be made to the Business Office.</p>"
+                            , PortalUser.Current.FirstName, formattedRoom, AcademicYear);
 
                             bool emailSuccess = !String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(smtpAddress, emailTo, emailSubject, emailBody);
                             //If the system is configured to log sent emails and the email was sent successfully create a record of it in the database 

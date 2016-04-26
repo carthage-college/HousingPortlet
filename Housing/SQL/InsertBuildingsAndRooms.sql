@@ -1,3 +1,5 @@
+USE ICS_NET_TEST
+
 BEGIN TRANSACTION
 	DECLARE	@clearExistingData	BIT	=	1;
 
@@ -40,7 +42,7 @@ BEGIN TRANSACTION
 		--Make sure to create a new INSERT statement at 1000 rows, which is the maximum number of inserts that can be performed with a single statement
 		SELECT
 			bldg, room, SUM(max_occ) AS total_occ,
-			"(NewID(), @" || LOWER(bldg) || ", '" || TRIM(room) || "', '" || CASE NVL(floor,'') WHEN '' THEN room[1,1] ELSE floor END || "', '" || CASE NVL(wing,'') WHEN '' THEN room[1,1] ELSE wing END || "', " || SUM(max_occ) || ", '" || TRIM(NVL(gender,'')) || "'), " AS sql
+			"(NewID(), @" || LOWER(TRIM(bldg)) || ", '" || TRIM(room) || "', '" || CASE NVL(floor,'') WHEN '' THEN room[1,1] ELSE floor END || "', '" || CASE NVL(wing,'') WHEN '' THEN room[1,1] ELSE wing END || "', " || SUM(max_occ) || ", '" || TRIM(NVL(gender,'')) || "'), " AS sql
 		FROM
 			facil_table
 		WHERE
@@ -298,7 +300,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Beta Phi Epsilon')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+		BuildingID		=	@den
 	AND
 		RoomNumber		IN	('300','304','306');
 	PRINT 'Updated Beta Phi Epsilon beds';
@@ -309,7 +311,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Tau Kappa Epsilon')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+		BuildingID		=	@den
 	AND
 		RoomNumber		IN	('349','358','359','362','368');
 	PRINT 'Updated Tau Kappa Epsilon beds';
@@ -320,7 +322,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Chi Omega')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+		BuildingID		=	@den
 	AND
 		RoomNumber		IN	('400','401','402','403','404','405','409','410','411','412','413','414','416','418','420');
 	PRINT 'Updated Chi Omega beds';
@@ -331,7 +333,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Sigma Omega Sigma')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+		BuildingID		=	@joh
 	AND
 		RoomNumber		IN	('202','206','216');
 	PRINT 'Updated Sigma Omega Sigma beds';
@@ -342,7 +344,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Delta Upsilon')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+		BuildingID		=	@joh
 	AND
 		RoomNumber		IN	('300','302','304','305','306','307','310','311','312','313','314','320','322');
 	PRINT 'Updated Delta Upsilon beds';
@@ -353,7 +355,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Phi Kappa Sigma')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+		BuildingID		=	@joh
 	AND
 		RoomNumber		IN	('401','403','404','412','413','414','415','422');
 	PRINT 'Updated Phi Kappa Sigma beds';
@@ -364,7 +366,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Alpha Chi Omega')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+		BuildingID		=	@joh
 	AND
 		RoomNumber		IN	('450','453','454','457','461','462','463','464','465','468');
 	PRINT 'Updated Alpha Chi Omega beds';
@@ -375,7 +377,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Tau Sigma Chi')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+		BuildingID		=	@madr
 	AND
 		RoomNumber		IN	('128','130','132','134','136','138','139','141','142','144','145','146','147','149','165','167','168','169','170','172','176','178','180');
 	PRINT 'Updated Tau Sigma Chi beds';
@@ -386,7 +388,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Tau Sigma Phi')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+		BuildingID		=	@madr
 	AND
 		RoomNumber		IN	('222','264','274');
 	PRINT 'Updated Tau Sigma Phi beds';
@@ -397,7 +399,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Kappa Phi Eta')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+		BuildingID		=	@madr
 	AND
 		RoomNumber		IN	('328','334','336','337','339','341','349');
 	PRINT 'Updated Kappa Phi Eta beds';
@@ -408,7 +410,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Delta Omega Nu')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+		BuildingID		=	@madr
 	AND
 		RoomNumber		IN	('422','481');
 	PRINT 'Updated Delta Omega Nu beds';
@@ -419,7 +421,7 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Sigma Alpha Chi')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+		BuildingID		=	@tar
 	AND
 		RoomNumber		IN	('202','204');
 	PRINT 'Updated Sigma Alpha Chi beds';
@@ -428,9 +430,9 @@ BEGIN TRANSACTION
 	UPDATE
 		CUS_Housing_Room
 	SET
-		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Sigma Alpha Chi')
+		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Pi Theta')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+		BuildingID		=	@tar
 	AND
 		RoomNumber		IN	('306','310','312','314','316','318','320');
 	PRINT 'Updated Pi Theta beds';
@@ -441,22 +443,22 @@ BEGIN TRANSACTION
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Delta Omega Epsilon')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+		BuildingID		=	@tar
 	AND
 		[Floor]			=	'1'
 	AND
 		Wing			=	'L'
 	PRINT 'Updated Delta Omega Epsilon beds';
 
-	--Zeta Tau Sigma (Denhart 2B)
+	--Zeta Tau Sigma (Denhart 1B)
 	UPDATE
 		CUS_Housing_Room
 	SET
 		DefaultGreek	=	(SELECT greekid FROM CUS_HousingSelectionGreek WHERE greekname = 'Zeta Tau Sigma')
 	WHERE
-		BuildingID		=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+		BuildingID		=	@den
 	AND
-		[Floor]			=	'2'
+		[Floor]			=	'1'
 	AND
 		Wing			=	'B'
 	PRINT 'Updated Zeta Tau Sigma beds';
@@ -469,84 +471,84 @@ BEGIN TRANSACTION
 	WHERE
 		--Apartments
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'APT')
+			BuildingID	=	@apt
 			AND
 			RoomNumber	IN	('001')
 		)
 		OR
 		--Denhart
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'DEN')
+			BuildingID	=	@den
 			AND
 			RoomNumber	IN	('012','020','108','151','212','251','308','320','351','408','451')
 		)
 		OR
 		--Johnson
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'JOH')
+			BuildingID	=	@joh
 			AND
 			RoomNumber	IN	('008','110','158','208','258','308','351','358','410','460')
 		)
 		OR
 		--Madrigrano
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'MADR')
+			BuildingID	=	@madr
 			AND
 			RoomNumber	IN	('140','174','240','270','340','372','440','449','470')
 		)
 		OR
 		--Oaks 1
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK1')
+			BuildingID	=	@oak1
 			AND
 			RoomNumber	IN	('211A','211B','403A','403B')
 		)
 		OR
 		--Oaks 2
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK2')
+			BuildingID	=	@oak2
 			AND
 			RoomNumber	IN	('211A','211B','403A','403B')
 		)
 		OR
 		--Oaks 3
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK3')
+			BuildingID	=	@oak3
 			AND
 			RoomNumber	IN	('211A','211B','403A','403B')
 		)
 		OR
 		--Oaks 4
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK4')
+			BuildingID	=	@oak4
 			AND
 			RoomNumber	IN	('211A','211B','403A','403B')
 		)
 		OR
 		--Oaks 5
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK5')
+			BuildingID	=	@oak5
 			AND
 			RoomNumber	IN	('211A','211B','403A','403B')
 		)
 		OR
 		--Oaks 6
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'OAK6')
+			BuildingID	=	@oak6
 			AND
 			RoomNumber	IN	('114','211A','211B','403A','403B')
 		)
 		OR
 		--Swenson
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'SWE')
+			BuildingID	=	@swe
 			AND
 			RoomNumber	IN	('015')
 		)
 		OR
 		--Tarble
 		(
-			BuildingID	=	(SELECT BuildingID FROM CUS_Housing_Building WHERE BuildingCode = 'TAR')
+			BuildingID	=	@tar
 			AND
 			RoomNumber	IN	('007','110','212','252','301','308','355','410')
 		)
