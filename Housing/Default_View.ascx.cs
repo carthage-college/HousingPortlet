@@ -109,14 +109,17 @@ namespace Housing
                 this.ltlHold.Text = hasHold ? "not" : "";
                 this.contentHoldDetail.Visible = hasHold;
 
-                bool isFallRegistered = int.Parse(drCxData["registered_hours"].ToString()) >= 12;
+                //By moving housing sign-up to a period before fall course registration, checking whether as student signed up for courses becomes an invalid condition
+                //bool isFallRegistered = int.Parse(drCxData["registered_hours"].ToString()) >= 12;
+                bool isFallRegistered = true;
+                
                 //A student must be registered for 12 or more credits in the upcoming semester
-                this.ltlRegistered.Text = isFallRegistered ? "" : "not";
+                //this.ltlRegistered.Text = isFallRegistered ? "" : "not";
                 
                 //If the student has not registered for the fall, display an explanation
-                this.contentRegisteredDetail.Visible = !isFallRegistered;
+                //this.contentRegisteredDetail.Visible = !isFallRegistered;
                 
-                this.ltlRegisteredYear.Text = String.Format("{0}", CurrentYear);
+                //this.ltlRegisteredYear.Text = String.Format("{0}", CurrentYear);
                 //Determine the proper display of student's gender
                 switch (drCxData["sex"].ToString())
                 {

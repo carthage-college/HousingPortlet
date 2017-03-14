@@ -139,33 +139,6 @@ namespace Housing {
         protected global::Jenzabar.Common.Web.UI.Controls.ContentBox contentHoldDetail;
         
         /// <summary>
-        /// ltlRegistered control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltlRegistered;
-        
-        /// <summary>
-        /// contentRegisteredDetail control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Jenzabar.Common.Web.UI.Controls.ContentBox contentRegisteredDetail;
-        
-        /// <summary>
-        /// ltlRegisteredYear control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltlRegisteredYear;
-        
-        /// <summary>
         /// ltlGender control.
         /// </summary>
         /// <remarks>

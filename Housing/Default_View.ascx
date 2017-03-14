@@ -38,6 +38,7 @@
                 <strong>You will not be able to sign up for housing until your outstanding balances are paid. Please contact the Business Office at x6333 about this.</strong>
             </common:ContentBox>
         </li>
+        <%---
         <li>
             You have <asp:Literal ID="ltlRegistered" runat="server" Text="[FIX THIS]" /> registered for classes in the fall.
             <common:ContentBox ID="contentRegisteredDetail" runat="server">
@@ -45,6 +46,7 @@
                 Fall term. Contact the Registrar's office at 262-551-6100 for additional information.</strong>
             </common:ContentBox>
         </li>
+        ---%>
         <li><asp:Literal ID="ltlGender" runat="server" Text="[FIX THIS]" />.</li>
         <li>You have earned <asp:Literal ID="ltlCareerCredits" runat="server" Text="[FIX THIS]" /> credits.</li>
         <li>
