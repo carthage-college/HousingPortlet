@@ -105,7 +105,8 @@ namespace Housing
                 //Store the CX "invl" field in the viewstate
                 this.ParentPortlet.PortletViewState["GreekID"] = drCxData["greekid"].ToString();
 
-                bool hasHold = (drCxData["advPayHold"].ToString() + drCxData["unbal_hold"].ToString()).Length > 0;
+                //bool hasHold = (drCxData["advPayHold"].ToString() + drCxData["unbal_hold"].ToString()).Length > 0;
+                bool hasHold = drCxData["unbal_hold"].ToString().Length > 0;
                 this.ltlHold.Text = hasHold ? "not" : "";
                 this.contentHoldDetail.Visible = hasHold;
 
@@ -144,7 +145,7 @@ namespace Housing
                 this.panelCommuter.Visible = this.ltlNotResident.Visible = isCommuter;
                 //this.panelCurrentHousing.Visible = this.panelUnregistered.Visible = !isCommuter;
                 this.panelCurrentHousing.Visible = !isCommuter;
-                if (this.panelUnregistered.Visible)
+                if (helper.IS_PRODUCTION && this.panelUnregistered.Visible)
                 {
                     this.panelUnregistered.Visible = !isCommuter;
                 }
@@ -158,7 +159,9 @@ namespace Housing
 
                 string message = "";
                 bool isStudentRA = studentIsRA();
-                bool isValidTime = (isStudentRA && IsTodayRA) || IsValidTimeToRegister(DayIndex, int.Parse(drCxData["career_hours"].ToString()), out message);
+                //bool isValidTime = (isStudentRA && IsTodayRA) || IsValidTimeToRegister(DayIndex, int.Parse(drCxData["career_hours"].ToString()), drCxData["greek_name"].ToString(), out message);
+                //2019-03-20 (MK) - Amber has requested RA's not be able to sign up for their room. She will manually assign them after housing has concluded.
+                bool isValidTime = !isStudentRA && IsValidTimeToRegister(DayIndex, int.Parse(drCxData["career_hours"].ToString()), drCxData["greek_name"].ToString(), out message);
 
                 bool hasDefinedGender = this.ParentPortlet.PortletViewState["Gender"].ToString() != "";
                 //A student must meet the following criteria to register:
@@ -203,7 +206,7 @@ namespace Housing
             else
             {
                 //Suppress the display of all the various responsive components of the page
-                this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
+                this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible = this.panelExtendedInvitations2.Visible =
                     this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
 
                 //Initialize message to be displayed
@@ -217,7 +220,7 @@ namespace Housing
 
                 if (isGPS)
                 {
-                    noSignupMessage = "This portlet is only needed by undergraduate residents. If you require housing, please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a>.";
+                    noSignupMessage = String.Format("This portlet is only needed by undergraduate residents. If you require housing, please contact {0} <a href='mailto:{1}'>{1}</a>.", helper.HOUSING_ADMIN_NAME, helper.HOUSING_ADMIN_EMAIL);
                 }
                 else if (dtStudentData != null && dtStudentData.Rows.Count == 0)
                 {
@@ -225,7 +228,7 @@ namespace Housing
                 }
                 else
                 {
-                    noSignupMessage = "We were unable to retrieve your information. Please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a> to resolve this issue.";
+                    noSignupMessage = String.Format("We were unable to retrieve your information. Please contact {0} <a href='mailto:{1}'>{1}</a> to resolve this issue.", helper.HOUSING_ADMIN_NAME, helper.HOUSING_ADMIN_EMAIL);
                 }
                 this.ParentPortlet.ShowFeedback(fbType, noSignupMessage);
             }
@@ -234,7 +237,7 @@ namespace Housing
             {
                 this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
                     this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
-                this.ParentPortlet.ShowFeedback(FeedbackType.Message, "This portlet is only needed by undergraduate residents. If you require housing, please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a>.");
+                this.ParentPortlet.ShowFeedback(FeedbackType.Message, String.Format("This portlet is only needed by undergraduate residents. If you require housing, please contact {0} <a href='mailto:{1}'>{1}</a>.", helper.HOUSING_ADMIN_NAME, helper.HOUSING_ADMIN_EMAIL));
             }
             else if (dtStudentData != null && dtStudentData.Rows.Count == 0)
             {
@@ -246,9 +249,10 @@ namespace Housing
             {
                 this.panelAvailability.Visible = this.panelCommuter.Visible = this.panelCurrentHousing.Visible = this.panelExtendedInvitations.Visible =
                     this.panelInvitations.Visible = this.panelOverview.Visible = this.panelRegistered.Visible = this.panelUnregistered.Visible = this.welcome.Visible = false;
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, "We were unable to retrieve your information. Please contact Nina Fleming <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a> to resolve this issue.");
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("We were unable to retrieve your information. Please contact {0} <a href='mailto:{1}'>{1}</a> to resolve this issue.", helper.HOUSING_ADMIN_NAME, helper.HOUSING_ADMIN_EMAIL));
             }
             */
+
             if (!helper.IS_PRODUCTION)
             {
                 bool isProduction = false;
@@ -257,10 +261,15 @@ namespace Housing
                 bool sendEmail = false;
                 bool.TryParse(helper.GetHousingSetting(HousingHelper.SETTING_KEY_SEND_EMAIL), out sendEmail);
 
-                string emailTo = helper.GetHousingSetting(HousingHelper.SETTING_KEY_TEST_EMAIL_ADDRESS);
-                string msg = String.Format("Found the following:<br />Is production: {0}<br />Send email: {1}<br />Email to: {2}<br />Email determination: {3}", isProduction.ToString(), sendEmail.ToString(), emailTo, (helper.sendEmailOk() ? "Okay to email students" : "Only email admins"));
+                DateTime? generalStart = null, raStart = null;
+                bool startDateSuccess = GetStartDates(out raStart, out generalStart);
 
-                this.ParentPortlet.ShowFeedback(FeedbackType.Message, msg);
+                string emailTo = helper.GetHousingSetting(HousingHelper.SETTING_KEY_TEST_EMAIL_ADDRESS);
+                string msg = String.Format("Found the following:<br />Is production: {0}<br />Send email: {1}<br />Email to: {2}<br />Email determination: {3}<br />Day: {4}; Index: {5} (isRA: {6})",
+                    isProduction.ToString(), sendEmail.ToString(), emailTo, (helper.sendEmailOk() ? "Okay to email students" : "Only email admins"), generalStart, DayIndex.ToString(), IsTodayRA.ToString());
+
+                //this.ParentPortlet.ShowFeedback(FeedbackType.Message, msg);
+                this.errMsg.ErrorMessage = msg;
             }
         }
 
@@ -336,7 +345,7 @@ namespace Housing
 											                            AND	TODAY			BETWEEN	UNBal.beg_date	AND	NVL(UNBal.end_date, TODAY)
 											                            AND	UNBal.hld			=	'UBAL'
                                 LEFT JOIN   involve_rec     invl_rec    ON  id_rec.id           =   invl_rec.id
-                                                                        AND NVL(invl_rec.invl,'')    IN  ('','S007','S025','S045','S061','S063','S092','S141','S152','S165','S168','S189','S190','S192','S194','S276','S277')
+                                                                        AND NVL(invl_rec.invl,'')    IN  ('','S007','S025','S045','S061','S063','S092','S141','S152','S165','S168','S189','S190','S192','S194','S276','S277','S282')
                                                                         AND NVL(invl_rec.end_date, TODAY)   >=  TODAY
                                                                         AND YEAR(invl_rec.beg_date)   =  {0}
                     WHERE id_rec.id	=	{1}
@@ -395,7 +404,7 @@ namespace Housing
                 }
                 else
                 {
-                    //TODO: If there are not start dates for both RAs and the general population what should we do? Attempt to automatically determine the values? Email Nina or an administrator?
+                    //TODO: If there are not start dates for both RAs and the general population what should we do? Attempt to automatically determine the values? Email housing admin or an administrator?
                 }
             }
             catch (Exception ee)
@@ -475,11 +484,11 @@ namespace Housing
 
                 if (dtExtendedInvite == null || dtExtendedInvite.Rows.Count == 0)
                 {
-                    this.panelExtendedInvitations.Visible = false;
+                    this.panelExtendedInvitations.Visible = this.panelExtendedInvitations2.Visible = false;
                 }
                 else
                 {
-                    this.panelExtendedInvitations.Visible = true;
+                    this.panelExtendedInvitations.Visible = this.panelExtendedInvitations2.Visible = true;
                 }
             }
             catch (Exception ex)
@@ -582,9 +591,9 @@ namespace Housing
         /// <param name="careerCreditHours">The total completed credit hours over the student's entire career</param>
         /// <param name="message">A user-readable explanation why they are not permitted to sign-up</param>
         /// <returns></returns>
-        private bool IsValidTimeToRegister(int dayIndex, int careerCreditHours, out string message)
+        private bool IsValidTimeToRegister(int dayIndex, int careerCreditHours, string greekName, out string message)
         {
-            string ExpiredMessage = "The housing sign-up period has expired. If you have any questions or problems, contact Nina Fleming at <a href='mailto:nfleming@carthage.edu'>nfleming@carthage.edu</a>, or call the Dean of Students office at 551-5800.";
+            string ExpiredMessage = String.Format("The housing sign-up period has expired. If you have any questions or problems, contact {0} at <a href='mailto:{1}'>{1}</a>, or call the Dean of Students office at 551-5800.", helper.HOUSING_ADMIN_NAME, helper.HOUSING_ADMIN_EMAIL);
             message = "";
             bool isValidTime = false;
             if (dayIndex < 0)
@@ -599,7 +608,9 @@ namespace Housing
                 switch (dayIndex)
                 {
                     case 0:
-                        isValidTime = true;
+                        //TODO: Add additional constraint to ensure user is a member of a Greek organization. The blanket "true" status only applied when the first day included squatters.
+                        //isValidTime = true;
+                        isValidTime = !String.IsNullOrWhiteSpace(greekName);
                         break;
                     case 1:
                         //Students meeting the credit hours for the day may begin signing up at 8 a.m.
@@ -758,15 +769,39 @@ namespace Housing
         private bool studentIsRA()
         {
             int[] arrayRA = {
+                                //2019 RA List
+                                1488830,1463347,1494233,1482856,1492063,1474291,1481102,1467645,1485547,1474140,
+                                1496120,1493724,1513707,1533265,1479143,1476038,1496108,1489791,1500739,1484413,
+                                1474951,1519395,1438088,1507525,1463926,1499755,1478288,1509159,1475502,1480905,
+                                1479431,1501837,1470914,1511820,1501121,1489377,1342846,1481215,1470360,1370385,
+                                1480225,1490256,1459495,1465187,1482808,1493323,1511835,1466121,1476715,1487771,
+                                1472245,1480123,1491440,1438223,1435049
+
+                                //2018 RA List
+                                //1465187,1480905,1476038,1479424,1464587,1412101,1459495,1498090,1438088,1427013,
+                                //1463974,1489791,1485547,1488830,1436401,1438223,1415363,1399018,1383296,1499263,
+                                //1474951,1423374,1496120,1472245,1435049,1474291,1405587,1493945,1463926,1470360,
+                                //1438508,1463087,1463347,1478017,1427991,1496108,1480123,1412177,891143,1389046,
+                                //1428007,1466121,1469657,1487709,1519395,1427269,1435756,1342846,1467645,1411876,
+                                //1479431,1425977,1480225,1398715,1361143,1419945
+
+                                //2017 RA List
+                                //1407002,1470448,1425977,1428007,1425939,1456418,1464587,1463974,1361143,1342846,
+                                //1470421,1421227,1416008,1425317,1478017,1395196,1411876,1463926,1399018,1361489,
+                                //1438223,1427013,1389046,1405587,1412101,1385027,1474291,1469657,1396941,1427991,
+                                //1423374,1409414,1476038,1418195,1389751,1336700,1424855,1429353,1430793,1463313,
+                                //1427269,1380208,1487709,1436182,1448268,1383296,1359246,
+                                //1398715,1335444,1412177,1415363,1363736,1403984
+
                                 //2016 RA List
-                                1381978,1421978,1339127,1405988,1383296,1396160,1389751,1338341,1425939,1392260,
-                                1425650,1385927,1383799,1409414,1392996,1427269,1362600,1427013,1427991,1389046,
-                                1409586,1385027,1427196,1389396,1415363,1325094,1361489,1403984,1384091,1387527,
-                                1423490,1380442,1363736,1404734,1425627,1305016,1380321,1416008,1412101,1396941,
-                                1428007,1398715,1418195,1400663,1335444,1397143,1412177,1320805,1369894,1253677,
-                                1328822,1390994,1358662,
+                                //1381978,1421978,1339127,1405988,1383296,1396160,1389751,1338341,1425939,1392260,
+                                //1425650,1385927,1383799,1409414,1392996,1427269,1362600,1427013,1427991,1389046,
+                                //1409586,1385027,1427196,1389396,1415363,1325094,1361489,1403984,1384091,1387527,
+                                //1423490,1380442,1363736,1404734,1425627,1305016,1380321,1416008,1412101,1396941,
+                                //1428007,1398715,1418195,1400663,1335444,1397143,1412177,1320805,1369894,1253677,
+                                //1328822,1390994,1358662,
                                 //RA roommates sign up the same day as the RAs so we include their IDs as well
-                                1425977,1416751,1359246,1423115,1356365,1418198,1345259,1414334
+                                //1425977,1416751,1359246,1423115,1356365,1418198,1345259,1414334
 
                                 //2015 RA List
                                 //1313163,1245108,1362954,1382806,1334627,1381978,1253677,1392260,1360349,1396160,

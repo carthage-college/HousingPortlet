@@ -20,12 +20,50 @@ namespace Housing
         public static string SETTING_KEY_IS_PRODUCTION = "IS_PRODUCTION";
         public static string SETTING_KEY_SEND_EMAIL = "SEND_EMAIL";
         public static string SETTING_KEY_TEST_EMAIL_ADDRESS = "TEST_EMAIL";
+        public static string SETTING_KEY_HOUSING_DIRECTOR_NAME = "HOUSING_DIRECTOR_NAME";
+        public static string SETTING_KEY_HOUSING_DIRECTOR_EMAIL = "HOUSING_DIRECTOR_EMAIL";
+
+
 
         public bool IS_PRODUCTION
         {
             get
             {
                 return bool.Parse(GetHousingSetting(SETTING_KEY_IS_PRODUCTION));
+            }
+        }
+
+        public bool SEND_EMAIL
+        {
+            get
+            {
+                return bool.Parse(GetHousingSetting(SETTING_KEY_SEND_EMAIL));
+            }
+        }
+
+        public string TEST_EMAIL_ADDRESS
+        {
+            get
+            {
+                return GetHousingSetting(SETTING_KEY_TEST_EMAIL_ADDRESS);
+            }
+        }
+
+        public string HOUSING_ADMIN_NAME
+        {
+            get
+            {
+                //return "Amber Krusza";
+                return GetHousingSetting(SETTING_KEY_HOUSING_DIRECTOR_NAME);
+            }
+        }
+
+        public string HOUSING_ADMIN_EMAIL
+        {
+            get
+            {
+                //return "akrusza@carthage.edu";
+                return GetHousingSetting(SETTING_KEY_HOUSING_DIRECTOR_EMAIL);
             }
         }
 

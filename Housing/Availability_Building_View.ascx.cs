@@ -88,14 +88,22 @@ namespace Housing
 
         protected void bulletedBuildings_Click(object sender, BulletedListEventArgs e)
         {
-            //Identify which building was clicked
-            ListItem clickedItem = this.bulletedBuildings.Items[e.Index];
+            try
+            {
+                //Identify which building was clicked
+                ListItem clickedItem = this.bulletedBuildings.Items[e.Index];
 
-            //Store the code of the building in the viewstate so it may be used on the next screen
-            this.ParentPortlet.PortletViewState["Building"] = clickedItem.Value;
+                //Store the code of the building in the viewstate so it may be used on the next screen
+                this.ParentPortlet.PortletViewState["Building"] = clickedItem.Value;
 
-            //Go to the screen where the user may select their bed from a list of available rooms
-            this.ParentPortlet.NextScreen("AvailabilityRoom");
+                //Go to the screen where the user may select their bed from a list of available rooms
+                this.ParentPortlet.NextScreen("AvailabilityRoom");
+            }
+            catch (Exception ex)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("<p>An error occurred in the click event of building selection. {0}</p><p>{1}</p><pre>{2}</pre>", ex.Message, ex.InnerException, ex.StackTrace));
+                InitScreen();
+            }
         }
     }
 }

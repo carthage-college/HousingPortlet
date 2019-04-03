@@ -7,7 +7,7 @@
 <asp:Panel ID="panelRegistered" runat="server" CssClass="pSection">
     <p>You have registered for <asp:Literal ID="ltlRegisteredHousing" runat="server" Text="[FIX THIS]" />.</p>
     <p>Your registration was completed at <asp:Literal ID="ltlRegisteredDateTime" runat="server" Text="[FIX THIS]" />.</p>
-    <p>If you have not already purchased a parking permit, you may do so <a href="http://www.carthage.edu/parking/">here</a>.</p>
+    <%--- <p>If you have not already purchased a parking permit, you may do so <a href="http://www.carthage.edu/parking/">here</a>.</p> ---%>
     <p>Occupants of your room:</p>
     <asp:BulletedList ID="bulletedRoommates" runat="server" CssClass="roommateList">
     </asp:BulletedList>
@@ -25,7 +25,7 @@
     </asp:Panel>
 </asp:Panel>
 <asp:Panel ID="panelCommuter" runat="server" CssClass="pSection">
-    <p>Our records indicate that you are currently a commuter. If you are interested in Carthage housing, please contact Nina Fleming at <a href="mailto:nfleming@carthage.edu">nfleming@carthage.edu</a>
+    <p>Our records indicate that you are currently a commuter. If you are interested in Carthage housing, please contact Amber Krusza at <a href="mailto:akrusza@carthage.edu">akrusza@carthage.edu</a>
     with your request.</p>
 </asp:Panel>
 <asp:Panel ID="panelUnregistered" runat="server" CssClass="pSection">
@@ -96,7 +96,8 @@
         <asp:Panel ID="panelOverview" runat="server">
             <p>It is not your time to register. You may:</p>
             <ul class="registrationOptions">
-                <li>Register for your current room <asp:Literal ID="ltlRegisterGreek" runat="server" Text="or a room affiliated with your greek organization" /> on <asp:Literal ID="ltlGreekSquatterDay" runat="server" />.</li>
+                <%--- <li>Register for <asp:Literal ID="ltlRegisterGreek" runat="server" Text="a room affiliated with your greek organization" /> on <asp:Literal ID="ltlGreekSquatterDay" runat="server" />.</li> ---%>
+                <li>Register for a room affiliated with your greek organization<asp:Literal ID="ltlRegisterGreek" runat="server" Text="" /> on <asp:Literal ID="ltlGreekSquatterDay" runat="server" />.</li>
                 <li>Register for any room starting at <asp:Literal ID="ltlFirstRegisterDateTime" runat="server" />.</li>
             </ul>
             <p>For a complete breakdown of registration days and times, please check the housing <a href="https://www.carthage.edu/housing/selection/overview.cfm" target="_blank">overview page</a>.</p>

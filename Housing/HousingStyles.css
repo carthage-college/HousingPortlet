@@ -19,7 +19,7 @@ span.bedOccupant {
 }
 
 input.bedOccupant {
-    width:80px;
+    width:90px;
 }
 
 input.bedReserved {
@@ -32,4 +32,13 @@ table.tableRoomAvailability > tbody > tr {
 
 table.tableRoomAvailability > tbody > tr > td:first-child {
     padding-right:10px;
+}
+
+.sendInvitationDetail {
+    padding:4px 6px;
+    border:3px solid #808080;
+    font-weight:bold;
+    background-color: #fff26d;
+    color: #000000;
+    width:fit-content;
 }

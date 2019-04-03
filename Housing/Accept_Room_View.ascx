@@ -21,11 +21,13 @@
 
 <div class="pSection">
     <p><asp:CheckBox ID="chkAgree" runat="server" Text="I agree to the terms and conditions listed below." /></p>
+    <%---
     <common:ContentBox ID="contentWaitlist" runat="server">
         <p>You have chosen not to live in the Oaks. Would you like to be placed on a waiting list to live in the Oaks should a space become available?
             Please realize that there is an extra charge associated with living in this premium housing.</p>
         <p><asp:CheckBox ID="chkOaksWaitlist" runat="server" Text="Please put me on a waiting list for the Oaks." /></p>
     </common:ContentBox>
+    ---%>
     <p><asp:Button ID="btnSubmit" runat="server" Text="Sign up for [FIX THIS]" OnClick="btnSubmit_Click" /></p>
 </div>
 
@@ -37,69 +39,72 @@ HOUSING CONTRACT FOR RESIDENCE HALLS
 ACADEMIC YEAR <asp:Literal ID="ltlContractYear" runat="server" Text="[FIX THIS]" />
 
 RETURNING STUDENTS
-Carthage agrees to provide assigned space in the residence halls for the undersigned 
-student for the <asp:Literal ID="ltlContractYear2" runat="server" Text="[FIX THIS]" /> academic year and the undersigned student agrees to pay for 
-said unassigned living space on the following terms:
+Carthage agrees to provide assigned space in the residence halls for the undersigned student for
+the <asp:Literal ID="ltlContractYear2" runat="server" Text="[FIX THIS]" /> academic year and the undersigned student agrees to pay for said assigned living
+space on the following terms:
 
 DURATION
-This contract shall be for three (3) consecutive terms of the academic year including 
-Term I, J-Term, and Term II. The student shall be entitled to reside in the halls starting 
-twenty-four (24) hours before classes begin and ending immediately after the final exam 
-each term. The only exception to this is J-Term. The campus does not close between the 
-end of J-Term and the beginning of Term II. The campus will be closed for the following 
-breaks:
+This contract shall be for three (3) consecutive terms of the academic year including 
+The Term I, J-Term, and Term II The student shall be entitled to reside in the halls at the
+designated time the day prior to classes and ending immediately after the final exam each term,
+unless given permission otherwise. The only exception to this is J-Term. Students must be a full-
+time Carthage student in order to be eligible for on-campus housing. If a student reduces to part-
+time status during the academic year, they are still obligated to fulfill their housing contract for
+the full academic year. The campus does not close between the end of J-Term and the beginning
+of Term II. The campus will be closed for the following breaks:
 
-    Thanksgiving November 18 after 6:00 p.m. through November 27, <asp:Literal ID="ltlThisYear1" runat="server" /> at noon
-    Christmas December 16, <asp:Literal ID="ltlThisYear2" runat="server" /> after 6:00 p.m. through January 2, <asp:Literal ID="ltlNextYear1" runat="server" /> at noon
-    Spring Break March 17, after 6:00 p.m. through March 26, <asp:Literal ID="ltlNextYear2" runat="server" /> at noon
+    Thanksgiving November 26th after 5:00 p.m. through December 1st, <asp:Literal ID="ltlThisYear1" runat="server" /> at noon
+    Christmas December 13th, <asp:Literal ID="ltlThisYear2" runat="server" /> after 5:00 p.m. through January 7th, <asp:Literal ID="ltlNextYear1" runat="server" /> at noon
+    Spring Break March 6th, after 5:00 p.m. through March 15th, <asp:Literal ID="ltlNextYear2" runat="server" /> at noon
 
-The student shall remove all personal possessions from their assigned space upon 
-termination of residence for any reason. All such personal possessions not removed will 
-be disposed of by Carthage and a cleaning fee assessed to the student.
+The student shall remove all personal possessions from their assigned space upon termination of
+residence for any reason. Carthage does not store personal possessions for students. All such
+personal possessions not removed will be disposed of by Carthage and a cleaning fee assessed to
+the student.
 
 TERMS
-A student must be registered full time to reside in the residence halls during any semester. 
-This equates to a minimum of twelve (12) credits each term, and a minimum of four (4) 
-credits during J-Term, to be eligible to live in the residence halls. Exception to the above 
-may be made by the Dean of Students.
+A student must be registered full time to reside in the residence halls during any semester. This
+equates to a minimum of twelve (12) credits each term, and a minimum of four (4) credits during
+J-Term, to be eligible to live in the residence halls. Exception to the above may be made by the
+Office of Residential Life.
 
 CHARGES
-The per term charges for rooms will be determined by Carthage at a later date. Carthage 
-reserves the right to change the amount of charge at any time. All students living on 
-campus are required to take a meal plan.
+The per term charges for rooms will be determined by the Student Accounts Office at Carthage
+College at a later date. Carthage reserves the right to change the amount of charge at any time.
+All students living on campus are required to take a meal plan.
 
 COMMUNITY CHARGES
-If damages or vandalism occur and no individual(s) is directly identified as being 
-responsible, the cost of repairs will be equally charged to the members of that wing, floor, 
-building or group of people most closely related to the damages. These charges will be 
-placed on the student’s monthly statement from Carthage.
+If damages or vandalism occur and no individual(s) is directly identified as being responsible,
+the cost of repairs will be equally charged to the members of that wing, floor, building or group
+of people most closely related to the damages. These charges will be placed on the student’s
+monthly statement from Carthage.
 
 ADJUSTMENTS
-No refund of room charges shall be made when a student withdraws, is dismissed from 
-Carthage, or is removed from housing for disciplinary reasons.
+No refund of room charges shall be made when a student withdraws, is dismissed from Carthage,
+or is removed from housing for disciplinary reasons.
 
 UNASSIGNED LIVING SPACE
-The contract does not constitute a guarantee for a specific room or roommate. Carthage 
-reserves the right to make any changes in room or roommate assignments at any time.
+The contract does not constitute a guarantee for a specific room or roommate. Carthage reserves
+the right to make any changes in room or roommate assignments at any time.
 
 EFFECTIVE DATE
-This contract becomes binding (1) when the student pays applicable advance payment 
-and (2) completes the on-line housing selection process. It continues for the academic 
-year as long as the student remains in good standing with Carthage.
+This contract becomes binding when the student completes the on-line housing selection process
+or when students are administratively assigned to housing if not eligible for commuter status or a
+residency exemption. It continues for the entire academic year as long as the student remains in
+good standing with Carthage.
 
 NO SHOWS
-Any student who does not report to their assigned living space 24 hours after the start of 
-classes will automatically lose their assigned space.
+Any student who does not report to their assigned living space 24 hours after the start of classes
+will automatically lose their assigned space.
 
 RULES AND REGULATIONS
-Carthage reserves the right for its authorized personnel to enter student rooms to preserve 
-and protect Carthage property and to assure compliance with state and local laws or 
-Carthage rules and regulations. In signing this contract, the student agrees to adhere to all 
-rules and regulations governing his/her behavior as outlined in the Carthage Student 
-Community Code. 
+Carthage reserves the right for its authorized personnel to enter student rooms to preserve and
+protect Carthage property and to assure compliance with state and local laws or Carthage rules
+and regulations. In signing this contract, the student agrees to adhere to all rules and regulations
+governing their behavior as outlined in the Carthage Student Community Code.
 
 PAYMENTS
-All payments hereunder shall be made to the Business Office.
+All payments hereunder shall be made to the Student Accounts Office.
 ###############################################################################
 </pre>
 
@@ -107,19 +112,12 @@ All payments hereunder shall be made to the Business Office.
     <!--- Apartment --->
 <pre>Dear Apartment resident,
 
-You have been assigned to the Apartments at Carthage College for the <asp:Literal ID="ltlApartmentYear" runat="server" Text="[FIX THIS]" />
-academic year. The street address for the apartments is: 1625 Sheridan Road,
-in the town of Somers, WI. This letter details important information as you
-prepare for your return. Please browse the information below.
+You have been assigned to the On-Campus Apartments at Carthage College for the <asp:Literal ID="ltlApartmentYear" runat="server" Text="[FIX THIS]" />
+academic year. The street address for the apartments is: 1625 Sheridan Road, in the town of
+Somers, WI. This letter details important information as you prepare for your return. Please
+browse the information below.
 
 Utilities -  All utilities are included in the cost.
-
-Telephone service - You are responsible for obtaining your own local and long
-distance service. Some possible service providers are listed below:
-
-Ameritech sales: 800-924-1000
-McLeodUSA sales: 800-909-3012
-National Prepaid sales: 877-606-6066
 
 Cable service - Cable service is not provided.  A possible service provider is
 listed below:
@@ -132,48 +130,39 @@ for internet providers are listed below.
 ASAP virtual networks: 888-700-8710     Ameritech: 800-638-8775
 Broadwing: 800-276-2394                 Wisconsin Internet: 888-782-1454
 
-Parking - The apartment parking lot has a maximum capacity of 13 vehicles.
-Overflow parking for the apartment building is in Lot V. Apartment dwellers
-cannot park on the lawn, the entrance drive or the street. If the apartment lot
-is full you must park in Lot V, located right across the street. Contact the
-business office (262-551-6200) for more information about parking.
+Parking - The apartment parking lot has limited parking available for students. Every parking lot
+is first come, first served. Students who have a vehicle on campus must obtain a valid parking
+permit for a Carthage parking lot. Apartment dwellers cannot park on the lawn, the entrance
+drive or the street. Contact Campus Security (262-551- 5911) for more information about
+parking.
 
-Laundry facilities - Laundry machines are located in the building. Laundry
-machines are card access. Cards will be distributed at check-in.
+Laundry facilities - Laundry machines are located on the basement levels of the building.
+Laundry can be paid for with quarters or by debit card using the provided card machine.
 
-Mail Delivery - You will continue to receive your mail in the TWC via your
+Mail Delivery - You will continue to receive your mail in the Todd Wehr Center (TWC) via your
 campus mailbox.
 
-Break Periods - All campus housing facilities, including the Houses and
-Apartments, close during college break periods. Students who would like to stay
-during break periods must qualify for an &quot;extended stay.&quot;
-&quot;Extended stay&quot; paperwork is available from the Dean of Students
-office.
+Break Periods - All campus housing facilities, including the residence halls and on-campus
+apartments close during some break periods. Students who would like to stay during closed
+break periods must qualify and apply for &quot;extended stay.&quot; Information about the &quot;extended stay&quot;
+process is organized, managed, and promoted by the Office of Residential Life.
 
-Periodic Facilities Inspections - The Dean of Students Office reserves the
-right to conduct facilities inspections throughout the year, including prior
-to checkout. For maintenance concerns, contact the Dean of Students office at
-262-551-5800 or <a href="mailto:nfleming@carthage.edu">nfleming@carthage.edu</a>.
+Periodic Facilities Inspections - The Office of Residential Life reserves the right to conduct
+facilities inspections throughout the year, including prior to checkout. For maintenance concerns,
+please file a work order or contact the Maintenance Department at <a href="mailto:maintenance@carthage.edu">maintenance@carthage.edu</a>
 
-Campus Directory Information - If you would like to have your phone number
-listed in the campus directory, please submit this information to the Dean of
-Students office as soon as possible once you return.
-
-Check-In Inventories - All apartment residents will be responsible for
-completing an apartment inventory. More information will be available at
-check-in.
-
+Room Condition Reports - All residential students will be responsible for completing a room
+condition report when moving into their room. More information will be available at check-in.
 
 You are responsible for being familiar with and abiding by the Carthage College
-Community Code (<a href="http://www.carthage.edu/campus-life/code/">http://www.carthage.edu/campus-life/code/</a>). All
-information in the Community Code regarding room decoration(s) applies to the
-Houses. No structural changes may be made to the building. In addition, nails
-should not be used to attach fixtures. Questions regarding policies should be
-directed to the Dean of Students office.
+Community Code (<a href="http://www.carthage.edu/campus-life/code/">http://www.carthage.edu/campus-life/code/</a>). All information in the Community Code
+regarding room decoration(s) applies to the on-campus apartments. No structural changes may be
+made to the building. In addition, nails should not be used to attach fixtures. Questions regarding
+policies should be directed to the Dean of Students office.
 
 Sincerely,
-Nina Fleming
-Assistant Dean of Students
+<asp:Literal ID="ltlHousingAdminName" runat="server" />
+Director of Residential Life
 ###############################################################################</pre>
 
     <!--- Parking --->

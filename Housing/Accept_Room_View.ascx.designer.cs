@@ -58,24 +58,6 @@ namespace Housing {
         protected global::System.Web.UI.WebControls.CheckBox chkAgree;
         
         /// <summary>
-        /// contentWaitlist control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Jenzabar.Common.Web.UI.Controls.ContentBox contentWaitlist;
-        
-        /// <summary>
-        /// chkOaksWaitlist control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox chkOaksWaitlist;
-        
-        /// <summary>
         /// btnSubmit control.
         /// </summary>
         /// <remarks>
@@ -155,6 +137,15 @@ namespace Housing {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Literal ltlApartmentYear;
+        
+        /// <summary>
+        /// ltlHousingAdminName control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Literal ltlHousingAdminName;
         
         /// <summary>
         /// ltlParkingYear control.

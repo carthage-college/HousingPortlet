@@ -13,22 +13,13 @@ namespace Housing {
     public partial class Send_Invitations_View {
         
         /// <summary>
-        /// ltlRoomSelected control.
+        /// shRoomSelected control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltlRoomSelected;
-        
-        /// <summary>
-        /// ltlRoom control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Literal ltlRoom;
+        protected global::Jenzabar.Common.Web.UI.Controls.Subheader shRoomSelected;
         
         /// <summary>
         /// repeaterRoommates control.
@@ -38,6 +29,24 @@ namespace Housing {
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Repeater repeaterRoommates;
+        
+        /// <summary>
+        /// panelTower control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Panel panelTower;
+        
+        /// <summary>
+        /// repeaterSuitemates control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.Repeater repeaterSuitemates;
         
         /// <summary>
         /// panelStudentDetail control.

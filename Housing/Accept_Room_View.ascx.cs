@@ -51,6 +51,12 @@ namespace Housing
             this.ltlThisYear1.Text = this.ltlThisYear2.Text = CurrentYear;
             this.ltlNextYear1.Text = this.ltlNextYear2.Text = NextYear;
 
+            //Define values of mailto link
+            //this.aMail.Text = helper.HOUSING_ADMIN_EMAIL;
+            //this.aMail.NavigateUrl = String.Format("mailto:{0}", helper.HOUSING_ADMIN_EMAIL);
+
+            this.ltlHousingAdminName.Text = helper.HOUSING_ADMIN_NAME;
+
             //Get information about the selected room
             string roomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomDetails] @guidRoomSessionID = ?";
             Exception ex = null;
@@ -76,7 +82,7 @@ namespace Housing
                 //Only show the apartment contract if the student signed up for the apartments
                 this.panelApartmentContract.Visible = room["BuildingCode"].ToString() == "APT";
                 //Only show the Oaks waitlist if the student is not signing up for the Oaks
-                this.contentWaitlist.Visible = !room["BuildingCode"].ToString().Contains("OAK");
+                //this.contentWaitlist.Visible = !room["BuildingCode"].ToString().Contains("OAK");
             }
             catch (Exception ee)
             {
@@ -111,7 +117,8 @@ namespace Housing
                       new OdbcParameter("StudentID", PortalUser.Current.Guid)
                     , new OdbcParameter("RoomSessionID", this.ParentPortlet.PortletViewState["RoomSessionID"].ToString())
                     , new OdbcParameter("StudentGender", this.ParentPortlet.PortletViewState["Gender"].ToString())
-                    , new OdbcParameter("Waitlist", this.chkOaksWaitlist.Checked ? "Y" : "N")
+                    //, new OdbcParameter("Waitlist", this.chkOaksWaitlist.Checked ? "Y" : "N")
+                    , new OdbcParameter("Waitlist", "")
                 };
 
                 Exception exRegister = null;
@@ -135,7 +142,7 @@ namespace Housing
                         DataTable dtRoom = null;
 
                         string smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
-                        PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
+                        PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(helper.HOUSING_ADMIN_EMAIL);
                         smtpAddress = Email.GetProperEMailAddress(emailSender.EmailAddress);
                         string emailSubject = "Room Registration";
 
@@ -162,43 +169,45 @@ namespace Housing
                                     <p>##########</p>
                                     <p>CARTHAGE COLLEGE<br />HOUSING CONTRACT FOR RESIDENCE HALLS<br />ACADEMIC YEAR {2}</p>
                                     <p>RETURNING STUDENTS<br />
-                                    Carthage agrees to provide assigned space in the residence halls for the undersigned student for the {2} academic year and the undersigned student agrees to pay for 
-                                    said unassigned living space on the following terms:</p>
+                                    Carthage agrees to provide assigned space in the residence halls for the undersigned student for the {2} academic year and the undersigned student agrees to pay for
+                                    said assigned living space on the following terms:</p>
                                     <p>DURATION<br />
-                                    This contract shall be for three (3) consecutive terms of the academic year including Term I, J-Term, and Term II. The student shall be entitled to reside in the halls
-                                    starting twenty-four (24) hours before classes begin and ending immediately after the final exam each term. The only exception to this is J-Term. The campus does not
-                                    close between the end of J-Term and the beginning of Term II. The campus will be closed for the following breaks:</p>
+                                    This contract shall be for three (3) consecutive terms of the academic year including Term I, J-Term, and Term II. The student shall be entitled to reside in the halls
+                                    at the designated time the day prior to classes and ending immediately after the final exam each term, unless given permission otherwise. The only exception to this is
+                                    J-Term. Students must be a full-time Carthage student in order to be eligible for on-campus housing. If a student reduces to part-time status during the academic year,
+                                    they are still obligated to fulfill their housing contract for the full academic year. The campus does not close between the end of J-Term and the beginning of Term II.
+                                    The campus will be closed for the following breaks:</p>
                                     <blockquote>
-                                        Thanksgiving - November 18 after 6:00 p.m. through November 27, 2016 at noon<br />
-                                        Christmas - December 16, 2016 after 6:00 p.m. through January 2, 2017 at noon<br />
-                                        Spring Break - March 17, after 6:00 p.m. through March 26, 2017 at noon
+                                        Thanksgiving - November 26th after 5:00 p.m. through December 1st, 2019 at noon<br />
+                                        Christmas - December 13th, 2019 after 5:00 p.m. through January 7, 2020 at noon<br />
+                                        Spring Break - March 6th, after 5:00 p.m. through March 15th, 2020 at noon
                                     </blockquote>
-                                    <p>The student shall remove all personal possessions from their assigned space upon termination of residence for any reason. All such personal possessions not removed will
-                                    be disposed of by Carthage and a cleaning fee assessed to the student.</p>
+                                    <p>The student shall remove all personal possessions from their assigned space upon termination of residence for any reason. Carthage does not store personal possessions
+                                    for students. All such personal possessions not removed will be disposed of by Carthage and a cleaning fee assessed to the student.</p>
                                     <p>TERMS<br />
-                                    A student must be registered full time to reside in the residence halls during any semester. This equates to a minimum of twelve (12) credits each term, and a minimum of
-                                    four (4) credits during J-Term, to be eligible to live in the residence halls. Exception to the above may be made by the Dean of Students.</p>
+                                    A student must be registered full time to reside in the residence halls during any semester. This equates to a minimum of twelve (12) credits each term, and a minimum of
+                                    four (4) credits during J-Term, to be eligible to live in the residence halls. Exception to the above may be made by thevOffice of Residential Life.</p>
                                     <p>CHARGES<br />
-                                    The per term charges for rooms will be determined by Carthage at a later date. Carthage reserves the right to change the amount of charge at any time. All students living on
-                                    campus are required to take a meal plan.</p>
+                                    The per term charges for rooms will be determined by the Student Accounts Office at Carthage College at a later date. Carthage reserves the right to change the amount of
+                                    charge at any time. All students living on campus are required to take a meal plan.</p>
                                     <p>COMMUNITY CHARGES<br />
-                                    If damages or vandalism occur and no individual(s) is directly identified as being responsible, the cost of repairs will be equally charged to the members of that wing, floor,
-                                    building or group of people most closely related to the damages. These charges will be placed on the student’s monthly statement from Carthage.</p>
+                                    If damages or vandalism occur and no individual(s) is directly identified as being responsible, the cost of repairs will be equally charged to the members of that wing, floor,
+                                    building or group of people most closely related to the damages. These charges will be placed on the student’s monthly statement from Carthage.</p>
                                     <p>ADJUSTMENTS<br />
-                                    No refund of room charges shall be made when a student withdraws, is dismissed from Carthage, or is removed from housing for disciplinary reasons.</p>
+                                    No refund of room charges shall be made when a student withdraws, is dismissed from Carthage, or is removed from housing for disciplinary reasons.</p>
                                     <p>UNASSIGNED LIVING SPACE<br />
-                                    The contract does not constitute a guarantee for a specific room or roommate. Carthage reserves the right to make any changes in room or roommate assignments at any time.</p>
+                                    The contract does not constitute a guarantee for a specific room or roommate. Carthage reserves the right to make any changes in room or roommate assignments at any time.</p>
                                     <p>EFFECTIVE DATE<br />
-                                    This contract becomes binding (1) when the student pays applicable advance payment and (2) completes the on-line housing selection process. It continues for the academic
-                                    year as long as the student remains in good standing with Carthage.</p>
+                                    This contract becomes binding when the student completes the on-line housing selection process or when students are administratively assigned to housing if not eligible for
+                                    commuter status or a residency exemption. It continues for the entire academic year as long as the student remains in good standing with Carthage.</p>
                                     <p>NO SHOWS<br />
-                                    Any student who does not report to their assigned living space 24 hours after the start of classes will automatically lose their assigned space.</p>
+                                    Any student who does not report to their assigned living space 24 hours after the start of classes will automatically lose their assigned space.</p>
                                     <p>RULES AND REGULATIONS<br />
-                                    Carthage reserves the right for its authorized personnel to enter student rooms to preserve and protect Carthage property and to assure compliance with state and local
-                                    laws or Carthage rules and regulations. In signing this contract, the student agrees to adhere to all rules and regulations governing his/her behavior as outlined in the
-                                    Carthage Student Community Code.</p>
+                                    Carthage reserves the right for its authorized personnel to enter student rooms to preserve and protect Carthage property and to assure compliance with state and local
+                                    laws or Carthage rules and regulations. In signing this contract, the student agrees to adhere to all rules and regulations governing their behavior as outlined in the
+                                    Carthage Student Community Code.</p>
                                     <p>PAYMENTS<br />
-                                    All payments hereunder shall be made to the Business Office.</p>"
+                                    All payments hereunder shall be made to the Student Accounts Office.</p>"
                             , PortalUser.Current.FirstName, formattedRoom, AcademicYear);
 
                             bool emailSuccess = !String.IsNullOrEmpty(emailTo) && (new ValidEmail(emailTo).IsValid) && Email.CreateAndSendMailMessage(smtpAddress, emailTo, emailSubject, emailBody);

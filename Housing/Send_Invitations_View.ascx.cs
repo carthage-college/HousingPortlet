@@ -32,7 +32,10 @@ namespace Housing
             {
                 InitScreen();
             }
-            LoadRoommates();
+            //2019 Update
+            //LoadRoommates();
+            LoadSuitemates();
+            //END 2019 Update
         }
 
         private void InitScreen()
@@ -49,10 +52,15 @@ namespace Housing
             {
                 dtRoomDetail = jicsConn.ConnectToERP(roomSQL, ref exRoomDetail, parameters);
                 DataRow room = dtRoomDetail.Rows[0];
-                this.ltlRoomSelected.Text = this.ltlRoom.Text = String.Format("{0} {1}", room["BuildingName"].ToString(), room["RoomNumberOnly"].ToString());
                 this.ParentPortlet.PortletViewState["BuildingCode"] = room["BuildingCode"].ToString();
-                this.ParentPortlet.PortletViewState["RoomNumber"] = room["RoomNumberOnly"].ToString();
+                this.ParentPortlet.PortletViewState["RoomNumberOnly"] = room["RoomNumberOnly"].ToString();
                 this.ParentPortlet.PortletViewState["RoomCapacity"] = room["Capacity"].ToString();
+                //2019 Update
+                //this.ltlRoomSelected.Text = this.ltlRoom.Text = String.Format("{0} {1}", room["BuildingName"].ToString(), room["RoomNumberOnly"].ToString());
+                this.shRoomSelected.Text = String.Format("{0} {1}", room["BuildingName"].ToString(), room["RoomNumberOnly"].ToString());
+                this.ParentPortlet.PortletViewState["BuildingName"] = room["BuildingName"].ToString();
+                this.ParentPortlet.PortletViewState["IsAtCapacity"] = int.Parse(room["OccupantAndInvited"].ToString()) >= int.Parse(room["Capacity"].ToString());
+                //END 2019 Update
             }
             catch (Exception ex)
             {
@@ -60,6 +68,7 @@ namespace Housing
             }
         }
 
+        [Obsolete]
         private void LoadRoommates()
         {
             this.panelStudentDetail.Visible = false;
@@ -70,7 +79,7 @@ namespace Housing
             List<OdbcParameter> param = new List<OdbcParameter>
             {
                   new OdbcParameter("BuildingCode1", this.ParentPortlet.PortletViewState["BuildingCode"].ToString())
-                , new OdbcParameter("RoomNumber1", this.ParentPortlet.PortletViewState["RoomNumber"].ToString())
+                , new OdbcParameter("RoomNumber1", this.ParentPortlet.PortletViewState["RoomNumberOnly"].ToString())
             };
 
             this.ParentPortlet.PortletViewState["IsAtCapacity"] = false;
@@ -87,13 +96,14 @@ namespace Housing
                     {
                         dtRoommates.Rows.Add(
                             this.ParentPortlet.PortletViewState["BuildingCode"].ToString(),
-                            this.ParentPortlet.PortletViewState["RoomNumber"].ToString(),
+                            this.ParentPortlet.PortletViewState["RoomNumberOnly"].ToString(),
                             this.ParentPortlet.PortletViewState["RoomCapacity"].ToString(),
                             "", "",
                             dtRoommates.Rows[0]["RoomSessionID"].ToString(),
                             "Occupant"
                         );
                     }
+
                     this.repeaterRoommates.DataSource = dtRoommates;
                     this.repeaterRoommates.DataBind();
                 }
@@ -108,6 +118,100 @@ namespace Housing
             }
         }
 
+        private void LoadSuitemates()
+        {
+            this.panelStudentDetail.Visible = false;
+
+            string roommateSQL = "EXECUTE [dbo].[CUS_spHousing_getInvitationRoommates] @strBuildingCode = ?, @strRoomNumber = ?";
+            Exception exRoommates = null;
+            DataTable dtRoommates = null;
+            List<OdbcParameter> param = new List<OdbcParameter>
+            {
+                  new OdbcParameter("BuildingCode1", this.ParentPortlet.PortletViewState["BuildingCode"].ToString())
+                , new OdbcParameter("RoomNumber1", this.ParentPortlet.PortletViewState["RoomNumberOnly"].ToString())
+            };
+
+            try
+            {
+                dtRoommates = jicsConn.ConnectToERP(roommateSQL, ref exRoommates, param);
+                if (exRoommates != null) { throw exRoommates; }
+
+                DataTable dtRoomDetails = GetRoomDetails();
+
+                foreach (DataRow dr in dtRoomDetails.Rows)
+                {
+                    if (int.Parse(dr["Total"].ToString()) < int.Parse(dr["Capacity"].ToString()))
+                    {
+                        dtRoommates.Rows.Add(
+                            dr["BuildingName"].ToString(),
+                            dr["RoomNumber"].ToString(),
+                            dr["Capacity"].ToString(),
+                            "", "",
+                            dr["RoomSessionID"].ToString(), "Occupant"
+                        );
+                    }
+                }
+
+                this.repeaterRoommates.Visible = false;
+                this.repeaterSuitemates.DataSource = dtRoommates;
+                this.repeaterSuitemates.DataBind();
+
+                #region Old Code
+                //int capacity = int.Parse(this.ParentPortlet.PortletViewState["RoomCapacity"].ToString());
+                //bool isAtCapacity = dtRoommates.Rows.Count >= capacity;
+                //this.ParentPortlet.PortletViewState["IsAtCapacity"] = isAtCapacity;
+                //if (!isAtCapacity)
+                //{
+                //    //dtRoommates.Rows.Add(
+                //    //    this.ParentPortlet.PortletViewState["BuildingCode"].ToString(),
+                //    //    this.ParentPortlet.PortletViewState["RoomNumber"].ToString(),
+                //    //    this.ParentPortlet.PortletViewState["RoomCapacity"].ToString(),
+                //    //    "", "",
+                //    //    dtRoommates.Rows[0]["RoomSessionID"].ToString(),
+                //    //    "Occupant"
+                //    //);
+                //    string roomSessionID = dtRoommates.Rows[0]["RoomSessionID"].ToString();
+                //    int roomOccupancy = 0;
+                //    foreach (DataRow dr in dtRoommates.Rows)
+                //    {
+                //        if (dr["RoomSessionID"].ToString() == roomSessionID)
+                //        {
+                //            roomOccupancy++;
+                //        }
+                //        else
+                //        {
+                //            if(roomOccupancy < int.Parse(dr["Capacity"].ToString()))
+                //            {
+                //                dtRoommates.Rows.Add(
+                //                    this.ParentPortlet.PortletViewState["BuildingName"].ToString(),
+                //                    this.ParentPortlet.PortletViewState["RoomNumber"].ToString(),
+                //                    this.ParentPortlet.PortletViewState["Capacity"].ToString(),
+                //                    "", "",
+                //                    roomSessionID, "Occupant"
+                //                );
+                //            }
+
+                //        }
+                //    }
+                //}
+
+                //this.repeaterRoommates.Visible = false;
+                //this.panelTower.Visible = true;
+                //this.repeaterSuitemates.DataSource = dtRoommates;
+                //this.repeaterSuitemates.DataBind();
+                #endregion
+            }
+            catch (Exception ex)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error while binding repeater:<br />{0}<br /><br />{1}<br />{2}", ex.Message, ex.InnerException, ex.ToString()));
+            }
+            finally
+            {
+                if (jicsConn.IsNotClosed()) { jicsConn.Close(); }
+            }
+        }
+
+        [Obsolete]
         protected void repeaterRoommates_ItemDataBound(object sender, RepeaterItemEventArgs e)
         {
             if (e.Item.ItemType == ListItemType.AlternatingItem || e.Item.ItemType == ListItemType.Item)
@@ -115,7 +219,7 @@ namespace Housing
                 DataRow roommate = (e.Item.DataItem as DataRowView).Row;
 
                 PlaceHolder phRow = e.Item.FindControl("phRoommate") as PlaceHolder;
-                
+
                 //If the bed is available, allow the user to invite a friend
                 if (String.IsNullOrEmpty(roommate["FirstName"].ToString() + roommate["LastName"].ToString()))
                 {
@@ -239,7 +343,7 @@ namespace Housing
             this.panelStudentNo.Visible = !okToEmail;
             if (okToEmail)
             {
-                this.ltlStudentName.Text = invited.ToFirstLastNameDisplay().ToString();
+                this.ltlStudentName.Text = String.Format("{0} {1}", invited.FirstName, invited.LastName); //invited.ToFirstLastNameDisplay().ToString();
                 this.ltlStudentEmail.Text = invited.EmailAddress;
                 this.btnSendInvitation.CommandArgument = invited.HostID;
                 this.ParentPortlet.PortletViewState["InvitedRoomSessionID"] = btn.CommandArgument;
@@ -305,17 +409,16 @@ namespace Housing
                         you've logged into the housing sign-up application to accept this roommate invitation.</p>
 				        <p>You must log in and select a bed before 2pm on {2:MMMM d, yyyy} to secure housing. <strong>This roommate invitation does not secure your housing for the {3}
                         academic year.</strong> You must log in and either accept the invitation or sign up for a different room to secure housing for the {3} academic year.</p>
-				        <p>Please contact Nina Fleming, Assistant Dean of Students at <a mailto='nfleming@carthage.edu'>nfleming@carthage.edu</a> or in the Office of
-                        Student Life if you have any questions about this invitation.</p>
+				        <p>Please contact {4} at <a href='mailto:{5}'>{5}</a> or in the Office of Student Life if you have any questions about this invitation.</p>
 				        <p><a href='https://www.carthage.edu/housing/'>https://www.carthage.edu/housing/</a></p>
-                    ", drEmail["FirstName"].ToString(), drEmail["RoomLocation"].ToString(), drEmail["EndDate"].ToString(), drEmail["HousingYear"].ToString());
+                    ", drEmail["FirstName"].ToString(), drEmail["RoomLocation"].ToString(), drEmail["EndDate"].ToString(), drEmail["HousingYear"].ToString(), helper.HOUSING_ADMIN_NAME, helper.HOUSING_ADMIN_EMAIL);
 
                     PortalUser recipient = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(drEmail["Email"].ToString());
 
                     string emailSubject = "Housing Roommate Invitation",
                         smtpAddress = ConfigSettings.Current.SmtpDefaultEmailAddress;
 
-                    PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail("nfleming@carthage.edu");
+                    PortalUser emailSender = ObjectFactoryWrapper.GetInstance<IPortalUserFacade>().FindByEmail(helper.HOUSING_ADMIN_EMAIL);
                     smtpAddress = Email.GetProperEMailAddress(emailSender.EmailAddress);
 
 
@@ -329,13 +432,147 @@ namespace Housing
                         recipients.Add(recipient);
                         new EmailLogger().Log(emailSender, recipients, null, null, null, emailSubject, emailBody, null, null);
                     }
-                    LoadRoommates();
+                    //LoadRoommates();
+                    LoadSuitemates();
                 }
             }
             catch (Exception ex)
             {
                 this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("Error when emailing invitee<br />{0}<br /><br />{1}", ex.Message, ex.InnerException.ToString()));
             }
+        }
+
+        protected void repeaterSuitemates_ItemDataBound(object sender, RepeaterItemEventArgs e)
+        {
+            if (e.Item.ItemType == ListItemType.AlternatingItem || e.Item.ItemType == ListItemType.Item)
+            {
+                DataRow drSuitemate = (e.Item.DataItem as DataRowView).Row;
+                DataRow drSuite = (GetRoomDetails(drSuitemate["RoomSessionID"].ToString(), true) as DataTable).Rows[0];
+
+                PlaceHolder phSuitemate = e.Item.FindControl("phSuitemate") as PlaceHolder;
+
+                if (String.IsNullOrEmpty(drSuitemate["FirstName"].ToString() + drSuitemate["LastName"].ToString()))
+                {
+                    int spacesAvailable = int.Parse(drSuite["Capacity"].ToString()) - int.Parse(drSuite["Total"].ToString());
+                    if (spacesAvailable > 0)
+                    {
+                        Literal ltlRoomLabel = new Literal();
+                        ltlRoomLabel.Text = String.Format("{0} {1} ({2} bed{3} available)", drSuite["BuildingName"].ToString(), drSuite["RoomNumber"].ToString(),
+                            spacesAvailable, spacesAvailable != 1 ? "s" : "");
+                        phSuitemate.Controls.Add(ltlRoomLabel);
+
+                        TextBox tbEmail = new TextBox();
+                        tbEmail.ID = "tbFindEmail";
+                        phSuitemate.Controls.Add(tbEmail);
+
+                        Literal ltlEmailSuffix = new Literal();
+                        ltlEmailSuffix.Text = "@carthage.edu";
+                        phSuitemate.Controls.Add(ltlEmailSuffix);
+
+                        Button btnCheckEmail = new Button();
+                        btnCheckEmail.Text = "Check Email";
+                        btnCheckEmail.UseSubmitBehavior = false;
+                        btnCheckEmail.CommandArgument = drSuitemate["RoomSessionID"].ToString();
+                        btnCheckEmail.Click += btnCheckEmail_Click;
+                        phSuitemate.Controls.Add(btnCheckEmail);
+                    }
+                }
+                else
+                {
+                    //Literal ltlRoommate = new Literal();
+                    //ltlRoommate.Text = String.Format("{0}: {1} {2}", drSuitemate["OccupancyStatus"].ToString(), drSuitemate["FirstName"].ToString(), drSuitemate["LastName"].ToString());
+                    //phSuitemate.Controls.Add(ltlRoommate);
+                    Label lblRoommate = new Label();
+                    lblRoommate.Text = String.Format("{0}: {1} {2}", drSuitemate["OccupancyStatus"].ToString(), drSuitemate["FirstName"].ToString(), drSuitemate["LastName"].ToString());
+                    lblRoommate.CssClass = "liRoommate";
+                    phSuitemate.Controls.Add(lblRoommate);
+                }
+
+                //Literal ltlSuitemate = new Literal();
+                //ltlSuitemate.Text = String.Format("{0}: {1} - {2} {3}", "[SuiteLabel]", drSuitemate["OccupancyStatus"].ToString(), drSuitemate["FirstName"].ToString(), drSuitemate["LastName"].ToString());
+                //phSuitemate.Controls.Add(ltlSuitemate);
+
+                //int aSuiteAvailable = int.Parse(drSuitemate["SuiteA_Capacity"].ToString()) - int.Parse(drSuitemate["SuiteA_Occupants"].ToString());
+                //bool isSuiteAFull = aSuiteAvailable > 0;
+
+                //int bSuiteAvailable = int.Parse(drSuitemate["SuiteB_Capacity"].ToString()) - int.Parse(drSuitemate["SuiteB_Occupants"].ToString());
+                //bool isSuiteBFull = bSuiteAvailable > 0;
+
+                //Literal ltlSuiteAvailable = new Literal();
+                //string suiteLabel = "[FIX THIS]";
+                //int availableBeds = 0;
+
+                ////If the user signed up for Suite A and there is still available space in the room
+                //if (this.ParentPortlet.PortletViewState["RoomSessionID"].ToString() == drSuitemate["SuiteA_RoomSessionID"].ToString() && !isSuiteAFull)
+                //{
+                //    suiteLabel = "A";
+                //    availableBeds = aSuiteAvailable;
+                //}
+                //else if(this.ParentPortlet.PortletViewState["RoomSessionID"].ToString() == drSuitemate["SuiteB_RoomSessionID"].ToString() && !isSuiteBFull)
+                //{
+                //    suiteLabel = "B";
+                //    availableBeds = bSuiteAvailable;
+                //}
+
+                ///***********************************************************************************
+                // * How are we determining whether the currently displayed row is for Suite A or B?
+                //***********************************************************************************/
+
+                //ltlSuiteAvailable.Text = String.Format("Suite {0} ({1} {2} available)", suiteLabel, availableBeds, (availableBeds == 1 ? "bed" : "beds"));
+                //phSuitemate.Controls.Add(ltlSuiteAvailable);
+
+                //TextBox tbEmail = new TextBox();
+                //tbEmail.ID = "tbFindEmail";
+                //phSuitemate.Controls.Add(tbEmail);
+
+                //Literal ltlEmailSuffix = new Literal();
+                //ltlEmailSuffix.Text = "@carthage.edu";
+                //phSuitemate.Controls.Add(ltlEmailSuffix);
+
+                //Button btnCheckEmail = new Button();
+                //btnCheckEmail.Text = "Check Email";
+                //btnCheckEmail.UseSubmitBehavior = false;
+                //btnCheckEmail.CommandArgument = drSuitemate["RoomSessionID"].ToString();
+                //btnCheckEmail.Click += btnCheckEmail_Click;
+                //phSuitemate.Controls.Add(btnCheckEmail);
+            }
+        }
+
+        protected DataTable GetRoomDetails(string roomSessionID = null, bool thisRoomOnly = false)
+        {
+            if (String.IsNullOrWhiteSpace(roomSessionID))
+            {
+                roomSessionID = this.ParentPortlet.PortletViewState["RoomSessionID"].ToString();
+            }
+
+            string sqlRoomDetail = "SELECT * FROM CUS_VW_Housing_Main WHERE ? IN (RoomSessionID, AdjoiningRoomSessionID)";
+            if (thisRoomOnly)
+            {
+                sqlRoomDetail = "SELECT * FROM CUS_VW_Housing_Main WHERE RoomSessionID = ?";
+            }
+
+            Exception exRoomDetail = null;
+            DataTable dtRoomDetail = null;
+            List<OdbcParameter> paramRoomDetail = new List<OdbcParameter>
+            {
+                new OdbcParameter("RoomSessionID", roomSessionID)
+            };
+
+            try
+            {
+                dtRoomDetail = jicsConn.ConnectToERP(sqlRoomDetail, ref exRoomDetail, paramRoomDetail);
+                if (exRoomDetail != null) { throw exRoomDetail; }
+            }
+            catch (Exception ex)
+            {
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, "An error occurred while retrieving room details");
+            }
+            finally
+            {
+                if (jicsConn.IsNotClosed()) { jicsConn.Close(); }
+            }
+
+            return dtRoomDetail;
         }
     }
 }

@@ -6,6 +6,12 @@
 <asp:LinkButton ID="lnkPickBuilding" runat="server" Text="Pick A Different Building" OnClick="lnkPickBuilding_Click" />
 
 <h4><asp:Literal ID="ltlBuildingName" runat="server" Text="[FIX THIS]" /></h4>
+<asp:Panel ID="panelOaksDescription" runat="server" Visible="false">
+    <div class="pSection">
+        Suites - offer two separate single living spaces with a shared bathroom<br />
+        Double - one shared living space with a private bathroom
+    </div>
+</asp:Panel>
 <asp:Repeater ID="rptRoomList" runat="server">
     <HeaderTemplate>
         <table cellpadding="3" cellspacing="0" border="0" class="tableRoomAvailability">

@@ -17,6 +17,7 @@ namespace Housing
         #region Public Variables
         OdbcConnectionClass3 jicsConn = new OdbcConnectionClass3("JICSDataConnection.config", true);
         public bool IsOaks = false;
+        public bool IsTower = false;
         public bool IsTodayGreekSquatter = false;
         #endregion
 
@@ -44,117 +45,192 @@ namespace Housing
 
         protected void InitScreen()
         {
-            //Check to see if a building is stored in the viewstate. If not, the user is redirected to the building selection page before being allowed to proceed.
-            if (this.ParentPortlet.PortletViewState["Building"] == null || this.ParentPortlet.PortletViewState["Building"].ToString().Length == 0)
-            {
-                this.ParentPortlet.PortletViewState["Message"] = "Please make sure to select a building before proceeding through the housing sign-up.";
-                this.ParentPortlet.PreviousScreen("AvailabilityBuilding");
-            }
-
-            string buildingID = this.ParentPortlet.PortletViewState["Building"].ToString();
-
-            //Find the name of the building selected by the user on the previous page
-            string buildingSQL = "EXECUTE [dbo].[CUS_spHousing_getBuildingByID] @guidBuildingID = ?";
-            //Initialize variables that will process results from the query
-            Exception ex = null;
-            DataTable dtBuilding = null;
-            List<OdbcParameter> parameters = new List<OdbcParameter>
-            {
-                //Get the buildingID variable from the viewstate
-                new OdbcParameter("buildingID", buildingID)
-            };
-
+            string debugUpdate = "<ul>";
             try
             {
-                dtBuilding = jicsConn.ConnectToERP(buildingSQL, ref ex, parameters);
-                if (ex != null) { throw ex; }
-
-                //If the query returned a row, assign the building's name to the appropriate textfield
-                if (dtBuilding != null && dtBuilding.Rows.Count == 1)
+                //Check to see if a building is stored in the viewstate. If not, the user is redirected to the building selection page before being allowed to proceed.
+                if (this.ParentPortlet.PortletViewState["Building"] == null || this.ParentPortlet.PortletViewState["Building"].ToString().Length == 0)
                 {
-                    this.ltlBuildingName.Text = dtBuilding.Rows[0]["BuildingName"].ToString();
-                    IsOaks = dtBuilding.Rows[0]["BuildingName"].ToString().StartsWith("Oaks");
+                    this.ParentPortlet.PortletViewState["Message"] = "Please make sure to select a building before proceeding through the housing sign-up.";
+                    this.ParentPortlet.PreviousScreen("AvailabilityBuilding");
                 }
+                string buildingID = this.ParentPortlet.PortletViewState["Building"].ToString();
+
+                debugUpdate = String.Format("{0}<li>Parsed buildingID from viewstate {1}</li>", debugUpdate, buildingID);
+
+                //Find the name of the building selected by the user on the previous page
+                string buildingSQL = "EXECUTE [dbo].[CUS_spHousing_getBuildingByID] @guidBuildingID = ?";
+                //Initialize variables that will process results from the query
+                Exception ex = null;
+                DataTable dtBuilding = null;
+                List<OdbcParameter> parameters = new List<OdbcParameter>
+                {
+                    //Get the buildingID variable from the viewstate
+                    new OdbcParameter("buildingID", buildingID)
+                };
+
+                debugUpdate = String.Format("{0}<li>Initialized variables for query to retrieve building</li>", debugUpdate);
+
+                try
+                {
+                    dtBuilding = jicsConn.ConnectToERP(buildingSQL, ref ex, parameters);
+                    if (ex != null) { throw ex; }
+
+                    debugUpdate = String.Format("{0}<li>Query to retrive building completed successfully</li>", debugUpdate);
+
+                    debugUpdate = String.Format("{0}<li>dtBuilding is not null: {1}</li>", debugUpdate, (dtBuilding != null).ToString());
+
+                    //If the query returned a row, assign the building's name to the appropriate textfield
+                    if (dtBuilding != null && dtBuilding.Rows.Count == 1)
+                    {
+                        string buildingName = dtBuilding.Rows[0]["BuildingName"].ToString();
+
+                        this.ltlBuildingName.Text = buildingName;
+                        IsOaks = buildingName.StartsWith("Oaks");
+                        debugUpdate = String.Format("{0}<li>Is Oaks: {1}</li>", debugUpdate, IsOaks.ToString());
+
+                        //If the user is looking at rooms in the Oaks, display language differentiating Suites from Doubles
+                        this.panelOaksDescription.Visible = IsOaks;
+                        debugUpdate = String.Format("{0}<li>Updated Oaks panel visibility</li>", debugUpdate);
+
+                        IsTower = buildingName.StartsWith("Residential");
+                        debugUpdate = String.Format("{0}<li>Is Tower: {1}</li>", debugUpdate, IsTower.ToString());
+                    }
+                    else
+                    {
+                        this.ParentPortlet.ShowFeedback(FeedbackType.Error, "We were unable to find the details of the building you selected. Please pick a different building and try again.");
+                    }
+                    debugUpdate = String.Format("{0}<li>Successfully retrieved building name</li>", debugUpdate);
+                }
+                catch (Exception ee)
+                {
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException.ToString()));
+                }
+
+                //Params: [0] = BuildingID, [1] = Gender
+                string raRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsStandard] @guidBuildingID = ?, @strGender = ?, @bitIsRA = 1";
+
+                // Params: [0] = GreekID (invl_table.invl), [1] = Gender, [2] = StudentID
+                string greekSquatterSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsGreekSquatter] @strGreekID = ?, @strGender = ?, @guidStudentID = ?, @guidBuildingID = ?";
+
+                //Params: [0] = BuildingID, [1] = Gender
+                string standardRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsStandard] @guidBuildingID = ?, @strGender = ?";
+
+                //Params: [0] = BuildingID, [1] = Gender
+                string oaksRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsOaks] @guidBuildingID = ?, @strGender = ?";
+
+                //Params: [0] = BuildingID, [1] = Gender
+                string oaksRARoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsOaks] @guidBuildingID = ?, @strGender = ?, @bitIsRA = 1";
+
+                //Params: [0] = Gender
+                string towerRARoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsTower] @strGender = ?, @bitIsRA = 1";
+
+                //Params: [0] = Gender
+                string towerRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsTower] @strGender = ?";
+
+                ex = null;
+                DataTable dtRooms = null;
+
+                bool isTodayRA = bool.Parse(this.ParentPortlet.PortletViewState["IsTodayRA"].ToString());
+                int dayIndex = int.Parse(this.ParentPortlet.PortletViewState["DayIndex"].ToString());
+                IsTodayGreekSquatter = dayIndex == 0;
+                //string roomSQL = dayIndex == 0 ? greekSquatterSQL : (IsOaks ? oaksRoomSQL : standardRoomSQL);
+
+                OdbcParameter paramGreekID = new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString());
+                OdbcParameter paramGender = new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString());
+                OdbcParameter paramStudentID = new OdbcParameter("StudentID", PortalUser.Current.Guid);
+                OdbcParameter paramBuildingID = new OdbcParameter("BuildingID", buildingID);
+
+                debugUpdate = String.Format("{0}<li>Initialized OdbcParameters</li>", debugUpdate);
+
+
+                List<OdbcParameter> roomParameters = new List<OdbcParameter>();
+                string roomSQL = "";
+                //If it is greek/squatter signup day
+                if (IsTodayGreekSquatter)
+                {
+                    roomSQL = greekSquatterSQL;
+                    //Pass parameters for greek organization and student/room gender
+                    roomParameters.Add(paramGreekID);
+                    roomParameters.Add(paramGender);
+                    roomParameters.Add(paramStudentID);
+                    roomParameters.Add(paramBuildingID);
+                }
+                //If today is RA signup or a valid general student signup day
                 else
                 {
-                    this.ParentPortlet.ShowFeedback(FeedbackType.Error, "We were unable to find the details of the building you selected. Please pick a different building and try again.");
+                    if (IsOaks)
+                    {
+                        roomSQL = oaksRoomSQL;
+                        roomParameters.Add(paramBuildingID);
+                        roomParameters.Add(paramGender);
+                    }
+                    else if (IsTower)
+                    {
+                        roomSQL = towerRoomSQL;
+                        roomParameters.Add(paramGender);
+                    }
+                    else
+                    {
+                        roomSQL = standardRoomSQL;
+                        roomParameters.Add(paramBuildingID);
+                        roomParameters.Add(paramGender);
+                    }
                 }
-            }
-            catch (Exception ee)
-            {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException.ToString()));
-            }
 
-            //Params: [0] = BuildingID, [1] = Gender
-            string raRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsStandard] @guidBuildingID = ?, @strGender = ?, @bitIsRA = 1";
+                debugUpdate = String.Format("{0}<li>Defined SQL and built parameterized lists", debugUpdate);
 
-            // Params: [0] = GreekID (invl_table.invl), [1] = Gender, [2] = StudentID
-            string greekSquatterSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsGreekSquatter] @strGreekID = ?, @strGender = ?, @guidStudentID = ?, @guidBuildingID = ?";
+                ////If it is greek/squatter signup day
+                //if(IsTodayGreekSquatter)
+                //{
+                //    //Pass parameters for greek organization and student/room gender
+                //    //roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
+                //    //roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
+                //    //roomParameters.Add(new OdbcParameter("StudentID", PortalUser.Current.Guid));
+                //    //roomParameters.Add(new OdbcParameter("BuildingID", buildingID));
+                //}
+                ////If today is RA signup or a valid general student signup day
+                //else if (isTodayRA || (dayIndex > 0 && dayIndex < 4))
+                //{
+                //    if (isTodayRA) { roomSQL = IsOaks ? oaksRARoomSQL : raRoomSQL; }
+                //    //roomParameters.Add(new OdbcParameter("RoomBuildingID", buildingID));
+                //    //roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
+                //}
 
-            //Params: [0] = BuildingID, [1] = Gender
-            string standardRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsStandard] @guidBuildingID = ?, @strGender = ?";
-
-            //Params: [0] = BuildingID, [1] = Gender
-            string oaksRoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsOaks] @guidBuildingID = ?, @strGender = ?";
-
-            //Params: [0] = BuildingID, [1] = Gender
-            string oaksRARoomSQL = "EXECUTE [dbo].[CUS_spHousing_getRoomsOaks] @guidBuildingID = ?, @strGender = ?, @bitIsRA = 1";
-            
-            ex = null;
-            DataTable dtRooms = null;
-
-            bool isTodayRA = bool.Parse(this.ParentPortlet.PortletViewState["IsTodayRA"].ToString());
-            int dayIndex = int.Parse(this.ParentPortlet.PortletViewState["DayIndex"].ToString());
-            IsTodayGreekSquatter = dayIndex == 0;
-            string roomSQL = dayIndex == 0 ? greekSquatterSQL : (IsOaks ? oaksRoomSQL : standardRoomSQL);
-
-            List<OdbcParameter> roomParameters = new List<OdbcParameter>();
-
-            //If it is greek/squatter signup day
-            if(IsTodayGreekSquatter)
-            {
-                //Pass parameters for greek organization and student/room gender
-                roomParameters.Add(new OdbcParameter("GreekInvl", this.ParentPortlet.PortletViewState["GreekID"].ToString()));
-                roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
-                roomParameters.Add(new OdbcParameter("StudentID", PortalUser.Current.Guid));
-                roomParameters.Add(new OdbcParameter("BuildingID", buildingID));
-            }
-            //If today is RA signup or a valid general student signup day
-            else if (isTodayRA || (dayIndex > 0 && dayIndex < 4))
-            {
-                //
-                if (isTodayRA) { roomSQL = IsOaks ? oaksRARoomSQL : raRoomSQL; }
-                roomParameters.Add(new OdbcParameter("RoomBuildingID", buildingID));
-                roomParameters.Add(new OdbcParameter("Gender", this.ParentPortlet.PortletViewState["Gender"].ToString()));
-            }
-
-            try
-            {
-                dtRooms = jicsConn.ConnectToERP(roomSQL, ref ex, roomParameters);
-                if (ex != null) { throw ex; }
-
-                //Complete placeholder that identifies how many rooms matched the search criteria (building and gender)
-                this.ltlBuildingName.Text += String.Format(" ({0} room{1} found)", dtRooms.Rows.Count.ToString(), (dtRooms.Rows.Count == 1 ? "" :"s"));
-
-                if (dtRooms != null)
+                try
                 {
-                    this.rptRoomList.ItemDataBound += rptRoomList_ItemDataBound;
-                    this.rptRoomList.DataSource = dtRooms;
-                    this.rptRoomList.DataBind();
+                    dtRooms = jicsConn.ConnectToERP(roomSQL, ref ex, roomParameters);
+                    if (ex != null) { throw ex; }
+
+                    //Complete placeholder that identifies how many rooms matched the search criteria (building and gender)
+                    this.ltlBuildingName.Text += String.Format(" ({0} room{1} found)", dtRooms != null ? dtRooms.Rows.Count.ToString() : "0", (dtRooms != null && dtRooms.Rows.Count == 1 ? "" : "s"));
+
+                    if (dtRooms != null)
+                    {
+                        this.rptRoomList.ItemDataBound += rptRoomList_ItemDataBound;
+                        this.rptRoomList.DataSource = dtRooms;
+                        this.rptRoomList.DataBind();
+                    }
+                }
+                catch (Exception ee)
+                {
+                    this.ParentPortlet.ShowFeedback(FeedbackType.Error,
+                        String.Format("<p>An error occurred while processing room search results.</p><p>{0}</p><p>{1}, {2}</p><pre>{3}</pre>", ee.Message, buildingID, this.ParentPortlet.PortletViewState["Gender"].ToString(), ee.InnerException.ToString()));
+                }
+                finally
+                {
+                    if (jicsConn.IsNotClosed()) { jicsConn.Close(); }
                 }
             }
-            catch (Exception ee)
+            catch (Exception exPrimaryFailure)
             {
-                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("{0}<br /><br />{1}", ee.Message, ee.InnerException.ToString()));
-            }
-            finally
-            {
-                if (jicsConn.IsNotClosed()) { jicsConn.Close(); }
+                this.ParentPortlet.ShowFeedback(FeedbackType.Error, String.Format("<p>An error occurred in the init event of room selection. {0}</p><p>{1}</p><pre>{2}</pre>{3}</ul>", exPrimaryFailure.Message, exPrimaryFailure.InnerException, exPrimaryFailure.StackTrace, debugUpdate));
             }
         }
 
         private void rptRoomList_ItemDataBound(object sender, RepeaterItemEventArgs e)
         {
+            string bedDebug = "";
             //Make sure that the repeater element being affected is an item or alternating item (essentially a row of content)
             if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
             {
@@ -187,6 +263,28 @@ namespace Housing
                         {
                             phBeds.Controls.Add(bedControl2);
                         }
+                    }
+                    else if (IsTower)
+                    {
+                        roomNumber.Text = String.Format("{0} {1}: ", row["BuildingCode"].ToString(), row["RoomNumberOnly"].ToString());
+
+                        bedDebug = String.Format("{0}<p>Generating beds for {1}</p><ul>", bedDebug, roomNumber.Text);
+
+                        string suiteA_ID = row["RoomID1"].ToString();
+                        for (int ii = 1; ii <= int.Parse(row["SuiteA_Capacity"].ToString()); ii++)
+                        {
+                            bedDebug = String.Format("{0}<li>BuildBedControl({1}, {2}, 'Suite A')</li>", bedDebug, suiteA_ID, ii.ToString());
+                            phBeds.Controls.Add(BuildBedControl(suiteA_ID, ii.ToString(), "Suite A"));
+                        }
+                        string suiteB_ID = row["RoomID2"].ToString();
+                        for (int jj = 1; jj <= int.Parse(row["SuiteB_Capacity"].ToString()); jj++)
+                        {
+                            bedDebug = String.Format("{0}<li>BuildBedControl({1}, {2}, 'Suite B')</li>", bedDebug, suiteB_ID, jj.ToString());
+                            phBeds.Controls.Add(BuildBedControl(suiteB_ID, jj.ToString(), "Suite B"));
+                        }
+
+                        bedDebug = String.Format("{0}</ul>", bedDebug);
+                        //this.ParentPortlet.ShowFeedback(FeedbackType.Message, bedDebug);
                     }
                     else
                     {
@@ -237,10 +335,11 @@ namespace Housing
         /// </summary>
         /// <param name="RoomSessionID">Unique identifier of the room for a specific session (primary key of CUS_Housing_RoomSession)</param>
         /// <param name="BedIndex">The numeric or alphabetical representation of a bed within the room</param>
+        /// <param name="customLabel">Custom label for displaying suites in the Residential Tower</param>
         /// <returns></returns>
-        public Control BuildBedControl(string RoomSessionID, string BedIndex)
+        public Control BuildBedControl(string RoomSessionID, string BedIndex, string customLabel = "")
         {
-            //The object to be passed back (during initial phase this was either a Button or Literal object)
+            //The object to be passed back (during initial development this was either a Button or Literal object)
             Control returnObj = null;
 
             if (RoomSessionID != "")
@@ -288,7 +387,7 @@ namespace Housing
                         btnBed.Click += chooseBed_Click;
                         btnBed.CommandArgument = RoomSessionID;
                         btnBed.CssClass = "bedOccupant";
-                        btnBed.Text = String.Format("Bed {0}", BedIndex);
+                        btnBed.Text = String.Format("{0} Bed {1}", customLabel, BedIndex);
 
                         //The label for the button is the name of the invitee or the bed number/letter.
                         //if (dtInvitation != null && (dtInvitation.Rows.Count >= bedNumber || (!bedIsNumber && dtInvitation.Rows.Count > 0)))
@@ -307,7 +406,8 @@ namespace Housing
                         //If the bed is not in a suite, take the corresponding (0-index-based) row from the recordset. If the bed is a suite, grab the first (0) row
                         DataRow drBed = dtBed.Rows[(bedIsNumber ? bedNumber - 1 : 0)];
                         Label lblBed = new Label();
-                        lblBed.Text = String.Format("Bed {0}: {1} {2}", BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
+                        lblBed.Text = String.Format("{0} Bed {1}: {2} {3}", customLabel, BedIndex, drBed["FirstName"].ToString(), drBed["LastName"].ToString());
+                        //lblBed.Text = String.Format("{0} Bed {1}: {2} {3}", customLabel, BedIndex, "Student", "Redacted");
                         lblBed.CssClass = "bedOccupant";
                         returnObj = lblBed;
                     }
